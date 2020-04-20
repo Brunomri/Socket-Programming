@@ -6,10 +6,10 @@
 typedef struct filmes
 {
 	char* id;
-	char titulo[maxLen];
-	char sinopse[maxLen];
-	char genero[maxLen];
-	char salas[maxLen];
+	char* titulo;
+	char* sinopse;
+	char* genero;
+	char* salas;
 } filme;
 
 // Cria um ID para ser atribuído a um novo filme
