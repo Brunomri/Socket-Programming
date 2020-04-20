@@ -5,7 +5,7 @@
 // TODO: Criar estrutura filme com título, sinopse, gênero, salas em exibição e identificador único
 typedef struct filmes
 {
-	int id;
+	char* id;
 	char titulo[maxLen];
 	char sinopse[maxLen];
 	char genero[maxLen];
@@ -16,19 +16,25 @@ typedef struct filmes
 int criarID() {
 	srand(time(0));
 	int id = rand();
+	//printf("novo id: %s", id);
 	return id;
 }
 
 // TODO: Cadastrar novo filme e retornar identificador
 int cadastrar(filme* novo) {
-	char id[maxLen] = "id";
-	char extensao[] = ".txt";
-	strcat(&id, &extensao);
+	int idTemp = criarID();
+	char id[maxLen];
+	sprintf(id, "%d", idTemp);
+	novo->id = id;
+
+	//char id[maxLen] = "id";
+	//char extensao[] = ".txt";
+	//strcat(&id, &extensao);
 
 	// TODO: Criar função geradora de id
 	FILE* fp;
-	fp = fopen(id, "w");
-	fputs(&id, fp);
+	fp = fopen(novo->id, "w");
+	fputs(novo->id, fp);
 	fputs("\n", fp);
 	fputs(novo->titulo, fp);
 	fputs("\n", fp);
@@ -39,14 +45,14 @@ int cadastrar(filme* novo) {
 	fputs(novo->salas, fp);
 	fclose(fp);
 
-	printf("Novo filme cadastrado:\n");
+	printf("novo filme cadastrado:\n");
 	printf("id: %s\n", novo->id);
 	printf("titulo: %s\n", novo->titulo);
 	printf("sinopse: %s\n", novo->sinopse);
 	printf("genero: %s\n", novo->genero);
 	printf("salas: %s\n", novo->salas);
 
-	return id;
+	return novo->id;
 }
 
 // TODO: Remover um filme a partir do seu identificador
@@ -63,7 +69,7 @@ int cadastrar(filme* novo) {
 
 int main() {
 	
-	printf("Gerenciamento de filmes\n");
+	printf("Gerenciamento de filmes\n\n");
 	filme novo = {NULL, "1917","a","b","5,6,7"};
 	cadastrar(&novo);
 }
