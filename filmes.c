@@ -14,7 +14,9 @@ typedef struct filmes
 
 // Cria um ID para ser atribuído a um novo filme
 int criarID() {
-
+	srand(time(0));
+	int id = rand();
+	return id;
 }
 
 // TODO: Cadastrar novo filme e retornar identificador
