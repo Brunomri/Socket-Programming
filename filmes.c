@@ -2,7 +2,7 @@
 #include <stdio.h>
 #define maxLen 200
 
-// TODO: Criar estrutura filme com título, sinopse, gênero, salas em exibição e identificador único
+// Estrutura filme com título, sinopse, gênero, salas em exibição e identificador único
 typedef struct filmes
 {
 	char* id;

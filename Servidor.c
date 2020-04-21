@@ -13,6 +13,51 @@
 #define MAXDATASIZE 100
 #define SERV_PORT 3490
 
+void func(int sockfd)
+{
+    char buff[MAXDATASIZE];
+    int n;
+    // infinite loop for chat 
+    for (;;) {
+        bzero(buff, MAXDATASIZE);
+
+        // read the message from client and copy it in buffer 
+        read(sockfd, buff, sizeof(buff));
+        // print buffer which contains the client contents 
+        printf("From client: %s\t To client : ", buff);
+        bzero(buff, MAXDATASIZE);
+        n = 0;
+        // copy server message in the buffer 
+        while ((buff[n++] = getchar()) != '\n')
+            ;
+
+        // and send that buffer to client 
+        write(sockfd, buff, sizeof(buff));
+
+        // if msg contains "Exit" then server exit and chat ended. 
+        if (strncmp("exit", buff, 4) == 0) {
+            printf("Server Exit...\n");
+            break;
+        }
+    }
+}
+
+// Estrutura filme com título, sinopse, gênero, salas em exibição e identificador único
+typedef struct filmes
+{
+    char* id;
+    char* titulo;
+    char* sinopse;
+    char* genero;
+    char* salas;
+} filme;
+
+void cadastrar(int sockfd) {
+    char* buff;
+    read(sockfd, buff, sizeof(buff));
+    printf("Novo filme: %s\n", buff);
+}
+
 int main(int argc, char** argv) {
     int    listenfd, connfd;
     socklen_t clilen;
@@ -41,6 +86,8 @@ int main(int argc, char** argv) {
         exit(1);
     }
 
+    printf("Servidor aguardando conexoes\n");
+
     for (; ; ) {
         clilen = sizeof(cliaddr);
         if ((connfd = accept(listenfd, (struct sockaddr*) &cliaddr, &clilen)) == -1) {
@@ -51,6 +98,7 @@ int main(int argc, char** argv) {
         if ((childpid = fork()) == 0) {
             close(listenfd);
             // TODO: operações no catálogo de filmes
+            cadastrar(connfd);
             exit(0);
         }
 
