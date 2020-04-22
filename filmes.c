@@ -73,7 +73,6 @@ int cadastrar(filme* novo) {
 	//char extensao[] = ".txt";
 	//strcat(&id, &extensao);
 
-	// TODO: Criar função geradora de id
 	FILE* fp;
 	fp = fopen(novo->id, "w");
 	fputs(novo->id, fp);

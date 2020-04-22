@@ -43,7 +43,7 @@ void func(int sockfd)
 //	char salas[MAXDATASIZE];
 //} filme;
 
-ssize_t readn(int fd, void* vptr, size_t n) {
+ssize_t readn(int fd, char* vptr, size_t n) {
 	size_t nleft;
 	ssize_t nread;
 	char* ptr;
@@ -65,7 +65,7 @@ ssize_t readn(int fd, void* vptr, size_t n) {
 	return (n - nleft);
 }
 
-ssize_t writen(int fd, const void* vptr, size_t n) {
+ssize_t writen(int fd, const char* vptr, size_t n) {
 	size_t nleft;
 	ssize_t nwritten;
 	const char* ptr;
@@ -85,10 +85,33 @@ ssize_t writen(int fd, const void* vptr, size_t n) {
 	return n;
 }
 
+void enviar(int sockfd, const void* buff) {
+	writen(sockfd, buff, MAXDATASIZE);
+	printf("Enviando: %s\n", buff);
+}
+
+void receber(int sockfd, void* buff) {
+	readn(sockfd, buff, MAXDATASIZE);
+	printf("Recebendo: %s\n", buff);
+}
+
 void cadastrar(int sockfd) {
-	char titulo[MAXDATASIZE] = "abcdefghijklmn";
-	writen(sockfd, titulo, sizeof(titulo));
-	printf("Enviando filme: %s\n", titulo);
+	char titulo[] = "abcdefghijklmn";
+	enviar(sockfd, titulo);
+
+	char sinopse[] = "Um filme sobre guerra";
+	enviar(sockfd, sinopse);
+
+	char genero[] = "acao";
+	enviar(sockfd, genero);
+
+	char salas[] = "1,2,3";
+	enviar(sockfd, salas);
+
+	char id[MAXDATASIZE];
+	receber(sockfd, id);
+
+	printf("\nFilme cadastrado com sucesso, id: %s\n", id);
 }
 
 int main (int argc, char** argv) {

@@ -94,10 +94,62 @@ ssize_t writen(int fd, const void* vptr, size_t n) {
     return n;
 }
 
+void enviar(int sockfd, const void* buff) {
+    writen(sockfd, buff, MAXDATASIZE);
+    printf("Enviando: %s\n", buff);
+}
+
+void receber(int sockfd, void* buff) {
+    readn(sockfd, buff, MAXDATASIZE);
+    printf("Recebendo: %s\n", buff);
+}
+
+// Cria um ID para ser atribuído a um novo filme
+int criarID() {
+    srand(time(0));
+    int id = rand();
+    //printf("novo id: %s", id);
+    return id;
+}
+
 void cadastrar(int sockfd) {
     char titulo[MAXDATASIZE];
-    readn(sockfd, titulo, sizeof(titulo));
-    printf("Novo filme: %s\n", titulo);
+    receber(sockfd, titulo);
+
+    char sinopse[MAXDATASIZE];
+    receber(sockfd, sinopse);
+
+    char genero[MAXDATASIZE];
+    receber(sockfd, genero);
+
+    char salas[MAXDATASIZE];
+    receber(sockfd, salas);
+
+    int idTemp = criarID();
+    char id[MAXDATASIZE];
+    sprintf(id, "%d", idTemp);
+
+    FILE* fp;
+    fp = fopen(id, "w");
+    fputs(id, fp);
+    fputs("\n", fp);
+    fputs(titulo, fp);
+    fputs("\n", fp);
+    fputs(sinopse, fp);
+    fputs("\n", fp);
+    fputs(genero, fp);
+    fputs("\n", fp);
+    fputs(salas, fp);
+    fclose(fp);
+
+    printf("\nnovo filme cadastrado:\n");
+    printf("id: %s\n", id);
+    printf("titulo: %s\n", titulo);
+    printf("sinopse: %s\n", sinopse);
+    printf("genero: %s\n", genero);
+    printf("salas: %s\n", salas);
+
+    enviar(sockfd, id);
 }
 
 int main(int argc, char** argv) {
