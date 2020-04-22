@@ -11,7 +11,7 @@
 #include <unistd.h>
 
 #define SERV_PORT 3490
-#define MAXDATASIZE 100
+#define MAXDATASIZE 500
 
 void func(int sockfd)
 {
@@ -34,20 +34,61 @@ void func(int sockfd)
 }
 
 // Estrutura filme com título, sinopse, gênero, salas em exibição e identificador único
-typedef struct filmes
-{
-	char* id;
-	char* titulo;
-	char* sinopse;
-	char* genero;
-	char* salas;
-} filme;
+//typedef struct filmes
+//{
+//	char id[MAXDATASIZE];
+//	char titulo[MAXDATASIZE];
+//	char sinopse[MAXDATASIZE];
+//	char genero[MAXDATASIZE];
+//	char salas[MAXDATASIZE];
+//} filme;
+
+ssize_t readn(int fd, void* vptr, size_t n) {
+	size_t nleft;
+	ssize_t nread;
+	char* ptr;
+
+	ptr = vptr;
+	nleft = n;
+	while (nleft > 0) {
+		if ((nread = read(fd, ptr, nleft)) < 0) {
+			if (errno == EINTR)
+				nread = 0;
+			else
+				return -1;
+		}
+		else if (nread == 0)
+			break;
+		nleft -= nread;
+		ptr += nread;
+	}
+	return (n - nleft);
+}
+
+ssize_t writen(int fd, const void* vptr, size_t n) {
+	size_t nleft;
+	ssize_t nwritten;
+	const char* ptr;
+
+	ptr = vptr;
+	nleft = n;
+	while (nleft > 0) {
+		if ((nwritten = write(fd, ptr, nleft)) <= 0) {
+			if (nwritten < 0 && errno == EINTR)
+				nwritten = 0;
+			else
+				return -1;
+		}
+		nleft -= nwritten;
+		ptr += nwritten;
+	}
+	return n;
+}
 
 void cadastrar(int sockfd) {
-	filme novo = {NULL, "O Irlandes", "Filme sobre mafia", "Acao", "1,2,3"};
-	char* buff = novo.titulo;
-	printf("Enviando filme: %s\n", buff);
-	write(sockfd, buff, sizeof(buff));
+	char titulo[MAXDATASIZE] = "abcdefghijklmn";
+	writen(sockfd, titulo, sizeof(titulo));
+	printf("Enviando filme: %s\n", titulo);
 }
 
 int main (int argc, char** argv) {
