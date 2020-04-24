@@ -52,6 +52,18 @@ void func(int sockfd)
 //   char* salas;
 //} filme;
 
+/*
+ * Funcao:  readn
+ * --------------
+ * Le n bytes de um socket. Repete o procedimento caso
+ * limite do buffer seja atingido
+ *
+ * fd: inteiro descritor do socket
+ * vptr: ponteiro para variavel que armazena os dados
+ * n: numero de bytes a serem lidos
+ *
+ * retorna: numero de bytes lidos
+ */
 ssize_t readn(int fd, void* vptr, size_t n) {
     size_t nleft;
     ssize_t nread;
@@ -74,6 +86,18 @@ ssize_t readn(int fd, void* vptr, size_t n) {
     return (n - nleft);
 }
 
+/*
+ * Funcao:  writen
+ * ---------------
+ * Escreve n bytes em um socket. Repete o procedimento caso
+ * limite do buffer seja atingido
+ *
+ * fd: inteiro descritor do socket
+ * vptr: ponteiro para variavel que armazena os dados
+ * n: numero de bytes a serem escritos
+ *
+ * retorna: numero de bytes escritos
+ */
 ssize_t writen(int fd, const void* vptr, size_t n) {
     size_t nleft;
     ssize_t nwritten;
@@ -94,17 +118,47 @@ ssize_t writen(int fd, const void* vptr, size_t n) {
     return n;
 }
 
-void enviar(int sockfd, const void* buff) {
-    writen(sockfd, buff, MAXDATASIZE);
-    printf("Enviando: %s\n", buff);
+/*
+ * Funcao:  enviar
+ * ---------------
+ * Encapsula 2 chamadas de writen para enviar o tamanho da variavel
+ * antes do envio dos dados
+ *
+ * sockfd: inteiro descritor do socket
+ * buff: ponteiro para variavel que armazena os dados
+ * size: numero de bytes a enviar
+ *
+ */
+void enviar(int sockfd, const void* buff, size_t size) {
+    writen(sockfd, &size, sizeof(size_t));
+    writen(sockfd, buff, size);
+    printf("Enviando: %s (%d bytes)\n", buff, size);
 }
 
+/*
+ * Funcao:  receber
+ * ----------------
+ * Encapsula 2 chamadas de readn para receber o tamanho da variavel
+ * antes da leitura dos dados
+ *
+ * sockfd: inteiro descritor do socket
+ * buff: ponteiro para variavel que armazena os dados
+ *
+ */
 void receber(int sockfd, void* buff) {
-    readn(sockfd, buff, MAXDATASIZE);
-    printf("Recebendo: %s\n", buff);
+    size_t size;
+    readn(sockfd, &size, sizeof(size_t));
+    readn(sockfd, buff, size);
+    printf("Recebendo: %s (%d bytes)\n", buff, size);
 }
 
-// Cria um ID para ser atribuído a um novo filme
+/*
+ * Funcao:  criarID
+ * ----------------
+ * Cria um identificador unico para atribuir a um novo filme
+ *
+ * retorna: inteiro contendo identificador unico
+ */
 int criarID() {
     srand(time(0));
     int id = rand();
@@ -112,7 +166,17 @@ int criarID() {
     return id;
 }
 
+/*
+ * Funcao:  cadastrar
+ * ------------------
+ * Cadastra um novo filme a partir do titulo, sinopse, genero e
+ * salas recebidos do cliente, envia de volta um identificador unico
+ *
+ * sockfd: inteiro descritor do socket
+ *
+ */
 void cadastrar(int sockfd) {
+
     char titulo[MAXDATASIZE];
     receber(sockfd, titulo);
 
@@ -149,7 +213,7 @@ void cadastrar(int sockfd) {
     printf("genero: %s\n", genero);
     printf("salas: %s\n", salas);
 
-    enviar(sockfd, id);
+    enviar(sockfd, id, sizeof(id));
 }
 
 int main(int argc, char** argv) {
@@ -182,7 +246,7 @@ int main(int argc, char** argv) {
 
     printf("Servidor aguardando conexoes\n");
 
-    for (; ; ) {
+    for ( ; ; ) {
         clilen = sizeof(cliaddr);
         if ((connfd = accept(listenfd, (struct sockaddr*) &cliaddr, &clilen)) == -1) {
             perror("accept");
@@ -197,6 +261,7 @@ int main(int argc, char** argv) {
         }
 
         close(connfd);
+        break;
     }
     return(0);
 }

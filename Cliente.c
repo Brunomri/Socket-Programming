@@ -43,7 +43,19 @@ void func(int sockfd)
 //	char salas[MAXDATASIZE];
 //} filme;
 
-ssize_t readn(int fd, char* vptr, size_t n) {
+/*
+ * Funcao:  readn
+ * --------------
+ * Le n bytes de um socket. Repete o procedimento caso
+ * limite do buffer seja atingido
+ *
+ * fd: inteiro descritor do socket
+ * vptr: ponteiro para variavel que armazena os dados
+ * n: numero de bytes a serem lidos
+ *
+ * retorna: numero de bytes lidos
+ */
+ssize_t readn(int fd, void* vptr, size_t n) {
 	size_t nleft;
 	ssize_t nread;
 	char* ptr;
@@ -65,7 +77,19 @@ ssize_t readn(int fd, char* vptr, size_t n) {
 	return (n - nleft);
 }
 
-ssize_t writen(int fd, const char* vptr, size_t n) {
+/*
+ * Funcao:  writen
+ * ---------------
+ * Escreve n bytes em um socket. Repete o procedimento caso
+ * limite do buffer seja atingido
+ *
+ * fd: inteiro descritor do socket
+ * vptr: ponteiro para variavel que armazena os dados
+ * n: numero de bytes a serem escritos
+ *
+ * retorna: numero de bytes escritos
+ */
+ssize_t writen(int fd, const void* vptr, size_t n) {
 	size_t nleft;
 	ssize_t nwritten;
 	const char* ptr;
@@ -85,28 +109,61 @@ ssize_t writen(int fd, const char* vptr, size_t n) {
 	return n;
 }
 
-void enviar(int sockfd, const void* buff) {
-	writen(sockfd, buff, MAXDATASIZE);
-	printf("Enviando: %s\n", buff);
+/*
+ * Funcao:  enviar
+ * ---------------
+ * Encapsula 2 chamadas de writen para enviar o tamanho da variavel
+ * antes do envio dos dados
+ *
+ * sockfd: inteiro descritor do socket
+ * buff: ponteiro para variavel que armazena os dados
+ * size: numero de bytes a enviar
+ *
+ */
+void enviar(int sockfd, const void* buff, size_t size) {
+	writen(sockfd, &size, sizeof(size_t));
+	writen(sockfd, buff, size);
+	printf("Enviando: %s (%d bytes)\n", buff, size);
 }
 
+/*
+ * Funcao:  receber
+ * ----------------
+ * Encapsula 2 chamadas de readn para receber o tamanho da variavel
+ * antes da leitura dos dados
+ *
+ * sockfd: inteiro descritor do socket
+ * buff: ponteiro para variavel que armazena os dados
+ *
+ */
 void receber(int sockfd, void* buff) {
-	readn(sockfd, buff, MAXDATASIZE);
-	printf("Recebendo: %s\n", buff);
+	size_t size;
+	readn(sockfd, &size, sizeof(size_t));
+	readn(sockfd, buff, size);
+	printf("Recebendo: %s (%d bytes)\n", buff, size);
 }
 
+/*
+ * Funcao:  cadastrar
+ * ------------------
+ * Cadastra um novo filme enviando ao servidor seu titulo, sinopse, genero e
+ * salas, recebendo do servidor um identificador unico
+ *
+ * sockfd: inteiro descritor do socket
+ *
+ */
 void cadastrar(int sockfd) {
-	char titulo[] = "abcdefghijklmn";
-	enviar(sockfd, titulo);
+	char titulo[] = "1917";
+	enviar(sockfd, titulo, sizeof(titulo));
 
 	char sinopse[] = "Um filme sobre guerra";
-	enviar(sockfd, sinopse);
+	enviar(sockfd, sinopse, sizeof(sinopse));
 
 	char genero[] = "acao";
-	enviar(sockfd, genero);
+	enviar(sockfd, genero, sizeof(genero));
 
 	char salas[] = "1,2,3";
-	enviar(sockfd, salas);
+	enviar(sockfd, salas, sizeof(salas));
 
 	char id[MAXDATASIZE];
 	receber(sockfd, id);
