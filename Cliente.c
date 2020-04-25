@@ -120,7 +120,7 @@ ssize_t writen(int fd, const void* vptr, size_t n) {
  * size: numero de bytes a enviar
  *
  */
-void enviar(int sockfd, const void* buff, size_t size) {
+void enviar(int sockfd, const char* buff, size_t size) {
 	writen(sockfd, &size, sizeof(size_t));
 	writen(sockfd, buff, size);
 	printf("Enviando: %s (%d bytes)\n", buff, size);
@@ -133,14 +133,16 @@ void enviar(int sockfd, const void* buff, size_t size) {
  * antes da leitura dos dados
  *
  * sockfd: inteiro descritor do socket
- * buff: ponteiro para variavel que armazena os dados
  *
+ * retorna: ponteiro para os dados recebidos
  */
-void receber(int sockfd, void* buff) {
+char* receber(int sockfd) {
 	size_t size;
 	readn(sockfd, &size, sizeof(size_t));
+	char* buff = (void*)malloc(size * sizeof(char));
 	readn(sockfd, buff, size);
 	printf("Recebendo: %s (%d bytes)\n", buff, size);
+	return buff;
 }
 
 /*
@@ -165,10 +167,16 @@ void cadastrar(int sockfd) {
 	char salas[] = "1,2,3";
 	enviar(sockfd, salas, sizeof(salas));
 
-	char id[MAXDATASIZE];
-	receber(sockfd, id);
+	char *id = receber(sockfd);
 
-	printf("\nFilme cadastrado com sucesso, id: %s\n", id);
+	printf("\nnovo filme cadastrado:\n");
+	printf("id: %s\n", id);
+	printf("titulo: %s\n", titulo);
+	printf("sinopse: %s\n", sinopse);
+	printf("genero: %s\n", genero);
+	printf("salas: %s\n", salas);
+
+	free(id);
 }
 
 int main (int argc, char** argv) {

@@ -129,7 +129,7 @@ ssize_t writen(int fd, const void* vptr, size_t n) {
  * size: numero de bytes a enviar
  *
  */
-void enviar(int sockfd, const void* buff, size_t size) {
+void enviar(int sockfd, const char* buff, size_t size) {
     writen(sockfd, &size, sizeof(size_t));
     writen(sockfd, buff, size);
     printf("Enviando: %s (%d bytes)\n", buff, size);
@@ -142,14 +142,16 @@ void enviar(int sockfd, const void* buff, size_t size) {
  * antes da leitura dos dados
  *
  * sockfd: inteiro descritor do socket
- * buff: ponteiro para variavel que armazena os dados
  *
+ * retorna: ponteiro para os dados recebidos
  */
-void receber(int sockfd, void* buff) {
+char* receber(int sockfd) {
     size_t size;
     readn(sockfd, &size, sizeof(size_t));
+    char* buff = (void*)malloc(size * sizeof(char));
     readn(sockfd, buff, size);
     printf("Recebendo: %s (%d bytes)\n", buff, size);
+    return buff;
 }
 
 /*
@@ -157,12 +159,14 @@ void receber(int sockfd, void* buff) {
  * ----------------
  * Cria um identificador unico para atribuir a um novo filme
  *
- * retorna: inteiro contendo identificador unico
+ * retorna: ponteiro para identificador unico
  */
-int criarID() {
+char* criarID() {
     srand(time(0));
-    int id = rand();
-    //printf("novo id: %s", id);
+    int idTemp = rand();
+    char* id = (char*) malloc (sizeof(idTemp));
+    sprintf(id, "%d", idTemp);
+    printf("\nnovo id: %s (%d bytes)\n", id, (strlen(id) + 1) * sizeof(char));
     return id;
 }
 
@@ -177,21 +181,16 @@ int criarID() {
  */
 void cadastrar(int sockfd) {
 
-    char titulo[MAXDATASIZE];
-    receber(sockfd, titulo);
+    char *titulo = receber(sockfd);
 
-    char sinopse[MAXDATASIZE];
-    receber(sockfd, sinopse);
+    char *sinopse = receber(sockfd);
 
-    char genero[MAXDATASIZE];
-    receber(sockfd, genero);
+    char *genero = receber(sockfd);
 
-    char salas[MAXDATASIZE];
-    receber(sockfd, salas);
+    char *salas = receber(sockfd);
 
-    int idTemp = criarID();
-    char id[MAXDATASIZE];
-    sprintf(id, "%d", idTemp);
+    char* id = criarID();
+    //printf("\nnovo id: %s\n", id);
 
     FILE* fp;
     fp = fopen(id, "w");
@@ -211,9 +210,19 @@ void cadastrar(int sockfd) {
     printf("titulo: %s\n", titulo);
     printf("sinopse: %s\n", sinopse);
     printf("genero: %s\n", genero);
-    printf("salas: %s\n", salas);
+    printf("salas: %s\n\n", salas);
 
-    enviar(sockfd, id, sizeof(id));
+    enviar(sockfd, id, (strlen(id) + 1)*sizeof(char)); 
+    /* O tamanho em bytes do id e o seu comprimento
+    retornado por strlen() acrescido de 1, para considerar
+    o caractere de final de cadeia, multiplicado pelo
+    tamanho em bytes de um char */
+
+    free(titulo);
+    free(sinopse);
+    free(genero);
+    free(salas);
+    free(id);
 }
 
 int main(int argc, char** argv) {
