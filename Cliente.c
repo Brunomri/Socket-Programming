@@ -123,7 +123,7 @@ ssize_t writen(int fd, const void* vptr, size_t n) {
 void enviar(int sockfd, const char* buff, size_t size) {
 	writen(sockfd, &size, sizeof(size_t));
 	writen(sockfd, buff, size);
-	printf("Enviando: %s (%d bytes)\n", buff, size);
+	printf("\nEnviando: %s (%d bytes)\n", buff, size);
 }
 
 /*
@@ -141,8 +141,46 @@ char* receber(int sockfd) {
 	readn(sockfd, &size, sizeof(size_t));
 	char* buff = (void*)malloc(size * sizeof(char));
 	readn(sockfd, buff, size);
-	printf("Recebendo: %s (%d bytes)\n", buff, size);
+	printf("\nRecebendo: %s (%d bytes)\n", buff, size);
 	return buff;
+}
+
+/*
+ * Funcao:  lerConsole
+ * ----------------
+ * Faz a leitura do console em um caractere por vez para alocar
+ * dinamicamente a memoria necessaria para as variaveis
+ *
+ */
+char* lerConsole() {
+	char* line = NULL, * tmp = NULL;
+	size_t size = 0, index = 0;
+	int ch = EOF;
+
+	while (ch) {
+		ch = getc(stdin);
+
+		/* Verifica se cadeia chegou ao fim */
+		if (ch == EOF || ch == '\n')
+			ch = 0;
+
+		/* Verifica se precisa alocar mais memoria */
+		if (size <= index) {
+			size += 1;
+			tmp = realloc(line, size);
+			if (!tmp) {
+				free(line);
+				line = NULL;
+				break;
+			}
+			line = tmp;
+		}
+
+		/* Armazena conteudo */
+		line[index++] = ch;
+	}
+
+	return line;
 }
 
 /*
@@ -155,28 +193,86 @@ char* receber(int sockfd) {
  *
  */
 void cadastrar(int sockfd) {
-	char titulo[] = "1917";
-	enviar(sockfd, titulo, sizeof(titulo));
+	printf("\nCadastrar novo filme:\n");
+	printf("\nInsira o titulo:\n");
+	char* titulo = lerConsole();
+	
+	printf("\nInsira a sinopse:\n");
+	char* sinopse = lerConsole();
+	
+	printf("\nInsira o genero:\n");
+	char* genero = lerConsole();
+	
+	printf("\nInsira as salas:\n");
+	char* salas = lerConsole();
 
-	char sinopse[] = "Um filme sobre guerra";
-	enviar(sockfd, sinopse, sizeof(sinopse));
-
-	char genero[] = "acao";
-	enviar(sockfd, genero, sizeof(genero));
-
-	char salas[] = "1,2,3";
-	enviar(sockfd, salas, sizeof(salas));
+	enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char));
+	enviar(sockfd, sinopse, (strlen(sinopse) + 1) * sizeof(char));
+	enviar(sockfd, genero, (strlen(genero) + 1) * sizeof(char));
+	enviar(sockfd, salas, (strlen(salas) + 1) * sizeof(char));
 
 	char *id = receber(sockfd);
 
-	printf("\nnovo filme cadastrado:\n");
-	printf("id: %s\n", id);
-	printf("titulo: %s\n", titulo);
-	printf("sinopse: %s\n", sinopse);
-	printf("genero: %s\n", genero);
-	printf("salas: %s\n", salas);
+	printf("\nNovo filme cadastrado:\n");
+	printf("Id: %s\n", id);
+	printf("Titulo: %s\n", titulo);
+	printf("Sinopse: %s\n", sinopse);
+	printf("Genero: %s\n", genero);
+	printf("Salas: %s\n", salas);
 
+	free(titulo);
+	free(sinopse);
+	free(genero);
+	free(salas);
 	free(id);
+}
+
+/*
+ * Funcao:  remover
+ * ----------------
+ * Remove um filme existente a partir do seu identificador
+ *
+ * sockfd: inteiro descritor do socket
+ *
+ */
+void remover(int sockfd) {
+
+}
+
+void operacao(int sockfd) {
+	for ( ; ; ) {
+		char* op = NULL;
+		printf("\nServidor oferece as seguintes operacoes:\n");
+		printf("1 - Cadastrar novo filme\n");
+		printf("2 - Remover um filme\n");
+		printf("3 - Listar titulo e salas de exibicao de todos os filmes\n");
+		printf("4 - Listar todos os titulos de filmes de um determinado genero\n");
+		printf("5 - Retornar o titulo de um filme\n");
+		printf("6 - Retornar todas as informacoes de um filme\n");
+		printf("7 - Listar todas as informacoes de todos os filmes\n");
+		printf("8 - Sair\n");
+		printf("\nEscolha a operacao pelo numero correspondente:\n");
+		op = lerConsole();
+		//printf("Operacao: %s\n", op);
+
+		enviar(sockfd, op, 2);
+		if (strcmp(op, "1") == 0) {
+			cadastrar(sockfd);
+		}
+		else if (strcmp(op, "2") == 0) {} // TODO: Remover filme
+		else if (strcmp(op, "3") == 0) {} // TODO: Listar titulo e salas de exibicao de todos os filmes
+		else if (strcmp(op, "4") == 0) {} // TODO: Listar todos os titulos de filmes de um determinado genero
+		else if (strcmp(op, "5") == 0) {} // TODO: Retornar o titulo de um filme
+		else if (strcmp(op, "6") == 0) {} // TODO: Retornar todas as informacoes de um filme
+		else if (strcmp(op, "7") == 0) {} // TODO: Listar todas as informacoes de todos os filmes
+		else if (strcmp(op, "8") == 0) {
+			printf("Encerrando\n");
+			free(op);
+			return;
+		}
+		else printf("Operacao indefinida\n");
+		free(op);
+	}
 }
 
 int main (int argc, char** argv) {
@@ -212,7 +308,8 @@ int main (int argc, char** argv) {
 	// TODO: operações no catálogo de filmes
 
 	//func(sockfd);
-	cadastrar(sockfd);
+	//cadastrar(sockfd);
+	operacao(sockfd);
 
 	exit(0);
 }
