@@ -230,6 +230,22 @@ void remover(int sockfd) {
 }
 
 /*
+ * Funcao: getTitulo
+ * -----------------
+ * Envia para o servidor o id de um filme recebe seu titulo
+ *
+ * sockfd: inteiro descritor do socket
+ *
+ */
+void getTitulo(int sockfd) {
+	printf("\nConsultar titulo\n");
+	printf("\nInsira o id\n");
+	char* id = lerConsole();
+
+	enviar(sockfd, id, (strlen(id) + 1) * sizeof(char));
+}
+
+/*
  * Funcao: escolheOperacao
  * -----------------------
  * Atribui um numero para cada operacao disponivel. Obtem do console a operacao escolhida pelo cliente, envia o 
@@ -259,7 +275,7 @@ void escolheOperacao(int sockfd) {
 		else if (strcmp(op, "2") == 0) remover(sockfd); // TODO: Remover filme
 		else if (strcmp(op, "3") == 0) {} // TODO: Listar titulo e salas de exibicao de todos os filmes
 		else if (strcmp(op, "4") == 0) {} // TODO: Listar todos os titulos de filmes de um determinado genero
-		else if (strcmp(op, "5") == 0) {} // TODO: Retornar o titulo de um filme
+		else if (strcmp(op, "5") == 0) getTitulo(sockfd); // TODO: Retornar o titulo de um filme
 		else if (strcmp(op, "6") == 0) {} // TODO: Retornar todas as informacoes de um filme
 		else if (strcmp(op, "7") == 0) {} // TODO: Listar todas as informacoes de todos os filmes
 		else if (strcmp(op, "8") == 0) {

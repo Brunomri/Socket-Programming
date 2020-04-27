@@ -141,6 +141,74 @@ char* criarID() {
 }
 
 /*
+ * Funcao: lerLinha
+ * ------------------
+ * Faz a leitura de uma linha em arquivo um caractere por vez para
+ * alocar dinamicamente a memoria necessaria para as variaveis
+ *
+ */
+char* lerArquivo(FILE* fp) {
+    char* line = NULL, * tmp = NULL;
+    size_t size = 0, index = 0;
+    int ch = EOF;
+
+    while (ch) {
+        ch = fgetc(fp);
+
+        /* Verifica se cadeia chegou ao fim */
+        if (ch == EOF || ch == '\n')
+            ch = 0;
+
+        /* Verifica se precisa alocar mais memoria */
+        if (size <= index) {
+            size += 1;
+            tmp = realloc(line, size);
+            if (!tmp) {
+                free(line);
+                line = NULL;
+                break;
+            }
+            line = tmp;
+        }
+
+        /* Armazena conteudo */
+        line[index++] = ch;
+    }
+
+    return line;
+}
+
+/*
+ * Funcao: lerFilme
+ * ----------------
+ * Recebe o id de um filme e qual parametro dentre id, titulo, sinopse, genero ou
+ * salas e retorna o parametro escolhido do filme correspondente
+ *
+ */
+char* lerFilme(char* id, int param) {
+    FILE* fp;
+    if ((fp = fopen(id, "r")) != NULL) {
+        id = lerArquivo(fp);
+        char* titulo = lerArquivo(fp);
+        char* sinopse = lerArquivo(fp);
+        char* genero = lerArquivo(fp);
+        char* salas = lerArquivo(fp);
+        printf("\nId: %s\n", id);
+        printf("\nTitulo: %s\n", titulo);
+        printf("\nSinopse: %s\n", sinopse);
+        printf("\nGenero: %s\n", genero);
+        printf("\nSalas: %s\n", salas);
+
+        if (param == 0) return id;
+        else if (param == 1) return titulo;
+        else if (param == 2) return sinopse;
+        else if (param == 3) return genero;
+        else if (param == 4) return salas;
+        else printf("\nErro: Parametros devem ser inteiros de 0 a 4\n");
+    }
+}
+
+/*
  * Funcao: cadastrar
  * -----------------
  * Cadastra um novo filme a partir do titulo, sinopse, genero e
@@ -235,6 +303,21 @@ void remover(int sockfd) {
 }
 
 /*
+ * Funcao: getTitulo
+ * -----------------
+ * Recebe do cliente um id e envia o titulo do filme correspondente
+ *
+ * sockfd: inteiro descritor do socket
+ *
+ */
+void getTitulo(int sockfd) {
+    char* id = receber(sockfd);
+    printf("\nConsultando filme %s\n", id);
+    char* titulo = lerFilme(id, 1);
+    printf("\nFilme %s possui titulo %s\n", id, titulo);
+}
+
+/*
  * Funcao: escolheOperacao
  * -----------------------
  * Recebe do cliente a operacao escolhida e inicia o processamento
@@ -252,7 +335,7 @@ void escolheOperacao(int sockfd) {
         else if (strcmp(op, "2") == 0) remover(sockfd); // TODO: Remover filme
         else if (strcmp(op, "3") == 0) {} // TODO: Listar titulo e salas de exibicao de todos os filmes
         else if (strcmp(op, "4") == 0) {} // TODO: Listar todos os titulos de filmes de um determinado genero
-        else if (strcmp(op, "5") == 0) {} // TODO: Retornar o titulo de um filme
+        else if (strcmp(op, "5") == 0) getTitulo(sockfd); // TODO: Retornar o titulo de um filme
         else if (strcmp(op, "6") == 0) {} // TODO: Retornar todas as informacoes de um filme
         else if (strcmp(op, "7") == 0) {} // TODO: Listar todas as informacoes de todos os filmes
         else if (strcmp(op, "8") == 0) {
