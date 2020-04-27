@@ -238,7 +238,7 @@ void remover(int sockfd) {
  *
  */
 void getTitulo(int sockfd) {
-	printf("\nConsultar titulo\n");
+	printf("\nConsultar o titulo de um filme\n");
 	printf("\nInsira o id\n");
 	char* id = lerConsole();
 
@@ -246,6 +246,37 @@ void getTitulo(int sockfd) {
 	char* titulo = receber(sockfd);
 	if (strcmp(titulo, "-1") == 0) printf("\nO filme %s nao existe\n", id);
 	else printf("\nFilme % s possui titulo %s\n", id, titulo);
+}
+
+/*
+ * Funcao: getAll
+ * --------------
+ * Envia para o servidor o id de um filme recebe todas as suas informacoes
+ *
+ * sockfd: inteiro descritor do socket
+ *
+ */
+void getAll(int sockfd) {
+	printf("\nConsultar todas as informacoes de um filme\n");
+	printf("\nInsira o id\n");
+	char* id = lerConsole();
+
+	enviar(sockfd, id, (strlen(id) + 1) * sizeof(char));
+	char* idServ = receber(sockfd);
+	char* titulo = receber(sockfd);
+	char* sinopse = receber(sockfd);
+	char* genero = receber(sockfd);
+	char* salas = receber(sockfd);
+
+	if (strcmp(idServ, "-1") == 0) printf("\nO filme %s nao existe\n", id);
+	else {
+		printf("\nFilme possui:\n");
+		printf("Id: %s\n", id);
+		printf("Titulo: %s\n", titulo);
+		printf("Sinopse: %s\n", sinopse);
+		printf("Genero: %s\n", genero);
+		printf("Salas: %s\n", salas);
+	}
 }
 
 /*
@@ -278,8 +309,8 @@ void escolheOperacao(int sockfd) {
 		else if (strcmp(op, "2") == 0) remover(sockfd); // TODO: Remover filme
 		else if (strcmp(op, "3") == 0) {} // TODO: Listar titulo e salas de exibicao de todos os filmes
 		else if (strcmp(op, "4") == 0) {} // TODO: Listar todos os titulos de filmes de um determinado genero
-		else if (strcmp(op, "5") == 0) getTitulo(sockfd); // TODO: Retornar o titulo de um filme
-		else if (strcmp(op, "6") == 0) {} // TODO: Retornar todas as informacoes de um filme
+		else if (strcmp(op, "5") == 0) getTitulo(sockfd);
+		else if (strcmp(op, "6") == 0) getAll(sockfd);
 		else if (strcmp(op, "7") == 0) {} // TODO: Listar todas as informacoes de todos os filmes
 		else if (strcmp(op, "8") == 0) {
 			printf("Encerrando\n");

@@ -194,7 +194,7 @@ char* lerFilme(char* id, int param) {
         char* genero = lerArquivo(fp);
         char* salas = lerArquivo(fp);
         
-        printf("\nFilme %s possui", id);
+        printf("\nFilme %s possui ", id);
         if (param == 0) {
             printf("id: %s\n", id);
             return id;
@@ -334,6 +334,31 @@ void getTitulo(int sockfd) {
 }
 
 /*
+ * Funcao: getAll
+ * --------------
+ * Recebe do cliente um id e enviar todas as informacoes do filme
+ *
+ * sockfd: inteiro descritor do socket
+ *
+ */
+void getAll(int sockfd) {
+    char* id = receber(sockfd);
+    printf("\nConsultando filme %s\n", id);
+    
+    id = lerFilme(id, 0);
+    char* titulo = lerFilme(id, 1);
+    char* sinopse = lerFilme(id, 2);
+    char* genero = lerFilme(id, 3);
+    char* salas = lerFilme(id, 4);
+
+    enviar(sockfd, id, (strlen(id) + 1) * sizeof(char));
+    enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char));
+    enviar(sockfd, sinopse, (strlen(sinopse) + 1) * sizeof(char));
+    enviar(sockfd, genero, (strlen(genero) + 1) * sizeof(char));
+    enviar(sockfd, salas, (strlen(salas) + 1) * sizeof(char));
+}
+
+/*
  * Funcao: escolheOperacao
  * -----------------------
  * Recebe do cliente a operacao escolhida e inicia o processamento
@@ -351,8 +376,8 @@ void escolheOperacao(int sockfd) {
         else if (strcmp(op, "2") == 0) remover(sockfd); // TODO: Remover filme
         else if (strcmp(op, "3") == 0) {} // TODO: Listar titulo e salas de exibicao de todos os filmes
         else if (strcmp(op, "4") == 0) {} // TODO: Listar todos os titulos de filmes de um determinado genero
-        else if (strcmp(op, "5") == 0) getTitulo(sockfd); // TODO: Retornar o titulo de um filme
-        else if (strcmp(op, "6") == 0) {} // TODO: Retornar todas as informacoes de um filme
+        else if (strcmp(op, "5") == 0) getTitulo(sockfd);
+        else if (strcmp(op, "6") == 0) getAll(sockfd);
         else if (strcmp(op, "7") == 0) {} // TODO: Listar todas as informacoes de todos os filmes
         else if (strcmp(op, "8") == 0) {
             printf("Cliente encerrou conexao\n");
