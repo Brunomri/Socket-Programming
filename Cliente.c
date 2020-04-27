@@ -221,7 +221,8 @@ void remover(int sockfd) {
 
 	enviar(sockfd, id, (strlen(id) + 1) * sizeof(char));
 	char* msg = receber(sockfd);
-	printf(msg, id);
+	if (strcmp(msg, "0") == 0) printf("\nFilme %s removido com sucesso\n", id);
+	else printf("\nFilme %s nao pode ser removido ou nao existe\n", id);
 }
 
 /*

@@ -161,30 +161,42 @@ void cadastrar(int sockfd) {
     //printf("\nnovo id: %s\n", id);
 
     FILE* fp;
-    fp = fopen(id, "w");
-    fputs(id, fp);
-    fputs("\n", fp);
-    fputs(titulo, fp);
-    fputs("\n", fp);
-    fputs(sinopse, fp);
-    fputs("\n", fp);
-    fputs(genero, fp);
-    fputs("\n", fp);
-    fputs(salas, fp);
-    fclose(fp);
+    if ((fp = fopen(id, "w")) != NULL) {
+        int ret;
+        fputs(id, fp);
+        fputs("\n", fp);
+        fputs(titulo, fp);
+        fputs("\n", fp);
+        fputs(sinopse, fp);
+        fputs("\n", fp);
+        fputs(genero, fp);
+        fputs("\n", fp);
+        fputs(salas, fp);
+        
+        if ((ret = fclose(fp)) == 0) {
+            printf("\nNovo filme cadastrado:\n");
+            printf("Id: %s\n", id);
+            printf("Titulo: %s\n", titulo);
+            printf("Sinopse: %s\n", sinopse);
+            printf("Genero: %s\n", genero);
+            printf("Salas: %s\n", salas);
 
-    printf("\nNovo filme cadastrado:\n");
-    printf("Id: %s\n", id);
-    printf("Titulo: %s\n", titulo);
-    printf("Sinopse: %s\n", sinopse);
-    printf("Genero: %s\n", genero);
-    printf("Salas: %s\n", salas);
+            enviar(sockfd, id, (strlen(id) + 1) * sizeof(char));
+            /* O tamanho em bytes do id e o seu comprimento
+            retornado por strlen() acrescido de 1, para considerar
+            o caractere de final de cadeia, multiplicado pelo
+            tamanho em bytes de um char */
+        }
+        else {
+            char* msg = "\nO arquivo do novo filme nao pode ser criado\n";
+            enviar(sockfd, msg, (strlen(msg) + 1) * sizeof(char));
+        }
 
-    enviar(sockfd, id, (strlen(id) + 1)*sizeof(char)); 
-    /* O tamanho em bytes do id e o seu comprimento
-    retornado por strlen() acrescido de 1, para considerar
-    o caractere de final de cadeia, multiplicado pelo
-    tamanho em bytes de um char */
+    }
+    else {
+        char* msg = "\nO arquivo do novo filme nao pode ser criado\n";
+        enviar(sockfd, msg, (strlen(msg) + 1) * sizeof(char));
+    }
 
     free(id);
     free(titulo);
@@ -206,16 +218,16 @@ void remover(int sockfd) {
     printf("\nRemovendo filme %s\n", id);
 
     int ret = remove(id);
+    char* res;
     if (ret == 0) {
-        char* msg = "\nFilme %s removido com sucesso\n";
-        printf(msg, id);
-        enviar(sockfd, msg, (strlen(msg) + 1) * sizeof(char));
+        printf("\nFilme %s removido com sucesso\n", id);
+        res = "0";
     }
     else {
-        char* msg = "\nFilme %s nao pode ser removido\n";
-        printf(msg, id);
-        enviar(sockfd, msg, (strlen(msg) + 1) * sizeof(char));
+        printf("\nFilme %s nao pode ser removido\n", id);
+        res = "-1";
     }
+    enviar(sockfd, res, (strlen(res) + 1) * sizeof(char));
 }
 
 /*
