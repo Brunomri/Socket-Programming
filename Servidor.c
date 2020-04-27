@@ -23,8 +23,8 @@
 //} filme;
 
 /*
- * Funcao:  readn
- * --------------
+ * Funcao: readn
+ * -------------
  * Le n bytes de um socket. Repete o procedimento caso
  * limite do buffer seja atingido
  *
@@ -57,8 +57,8 @@ ssize_t readn(int fd, void* vptr, size_t n) {
 }
 
 /*
- * Funcao:  writen
- * ---------------
+ * Funcao: writen
+ * --------------
  * Escreve n bytes em um socket. Repete o procedimento caso
  * limite do buffer seja atingido
  *
@@ -89,8 +89,8 @@ ssize_t writen(int fd, const void* vptr, size_t n) {
 }
 
 /*
- * Funcao:  enviar
- * ---------------
+ * Funcao: enviar
+ * --------------
  * Encapsula 2 chamadas de writen para enviar o tamanho da variavel
  * antes do envio dos dados
  *
@@ -106,8 +106,8 @@ void enviar(int sockfd, const char* buff, size_t size) {
 }
 
 /*
- * Funcao:  receber
- * ----------------
+ * Funcao: receber
+ * ---------------
  * Encapsula 2 chamadas de readn para receber o tamanho da variavel
  * antes da leitura dos dados
  *
@@ -125,8 +125,8 @@ char* receber(int sockfd) {
 }
 
 /*
- * Funcao:  criarID
- * ----------------
+ * Funcao: criarID
+ * ---------------
  * Cria um identificador unico para atribuir a um novo filme
  *
  * retorna: ponteiro para identificador unico
@@ -141,8 +141,91 @@ char* criarID() {
 }
 
 /*
- * Funcao:  cadastrar
+ * Funcao: lerLinha
  * ------------------
+ * Faz a leitura de uma linha em arquivo um caractere por vez para
+ * alocar dinamicamente a memoria necessaria para as variaveis
+ *
+ */
+char* lerArquivo(FILE* fp) {
+    char* line = NULL, * tmp = NULL;
+    size_t size = 0, index = 0;
+    int ch = EOF;
+
+    while (ch) {
+        ch = fgetc(fp);
+
+        /* Verifica se cadeia chegou ao fim */
+        if (ch == EOF || ch == '\n')
+            ch = 0;
+
+        /* Verifica se precisa alocar mais memoria */
+        if (size <= index) {
+            size += 1;
+            tmp = realloc(line, size);
+            if (!tmp) {
+                free(line);
+                line = NULL;
+                break;
+            }
+            line = tmp;
+        }
+
+        /* Armazena conteudo */
+        line[index++] = ch;
+    }
+
+    return line;
+}
+
+/*
+ * Funcao: lerFilme
+ * ----------------
+ * Recebe o id de um filme e qual parametro dentre id, titulo, sinopse, genero ou
+ * salas e retorna o parametro escolhido do filme correspondente
+ *
+ */
+char* lerFilme(char* id, int param) {
+    FILE* fp;
+    if ((fp = fopen(id, "r")) != NULL) {
+        id = lerArquivo(fp);
+        char* titulo = lerArquivo(fp);
+        char* sinopse = lerArquivo(fp);
+        char* genero = lerArquivo(fp);
+        char* salas = lerArquivo(fp);
+        
+        printf("\nFilme %s possui ", id);
+        if (param == 0) {
+            printf("id: %s\n", id);
+            return id;
+        }
+        else if (param == 1) {
+            printf("titulo: %s\n", titulo);
+            return titulo;
+        }
+        else if (param == 2) {
+            printf("sinopse: %s\n", sinopse);
+            return sinopse;
+        }
+        else if (param == 3) {
+            printf("genero: %s\n", genero);
+            return genero;
+        }
+        else if (param == 4) {
+            printf("salas: %s\n", salas);
+            return salas;
+        }
+        else printf("\nErro: Parametros devem ser inteiros de 0 a 4\n");
+    }
+    else {
+        printf("\nO filme %s nao existe\n", id);
+        return "-1";
+    }
+}
+
+/*
+ * Funcao: cadastrar
+ * -----------------
  * Cadastra um novo filme a partir do titulo, sinopse, genero e
  * salas recebidos do cliente, envia de volta um identificador unico
  *
@@ -161,30 +244,46 @@ void cadastrar(int sockfd) {
     //printf("\nnovo id: %s\n", id);
 
     FILE* fp;
-    fp = fopen(id, "w");
-    fputs(id, fp);
-    fputs("\n", fp);
-    fputs(titulo, fp);
-    fputs("\n", fp);
-    fputs(sinopse, fp);
-    fputs("\n", fp);
-    fputs(genero, fp);
-    fputs("\n", fp);
-    fputs(salas, fp);
-    fclose(fp);
+    if ((fp = fopen(id, "w")) != NULL) {
+        int ret;
+        fputs(id, fp);
+        fputs("\n", fp);
+        fputs(titulo, fp);
+        fputs("\n", fp);
+        fputs(sinopse, fp);
+        fputs("\n", fp);
+        fputs(genero, fp);
+        fputs("\n", fp);
+        fputs(salas, fp);
+        
+        if ((ret = fclose(fp)) == 0) {
+            printf("\nNovo filme cadastrado com sucesso:\n");
+            printf("Id: %s\n", id);
+            printf("Titulo: %s\n", titulo);
+            printf("Sinopse: %s\n", sinopse);
+            printf("Genero: %s\n", genero);
+            printf("Salas: %s\n", salas);
 
-    printf("\nNovo filme cadastrado:\n");
-    printf("Id: %s\n", id);
-    printf("Titulo: %s\n", titulo);
-    printf("Sinopse: %s\n", sinopse);
-    printf("Genero: %s\n", genero);
-    printf("Salas: %s\n", salas);
+            enviar(sockfd, id, (strlen(id) + 1) * sizeof(char));
+            enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char));
+            enviar(sockfd, sinopse, (strlen(sinopse) + 1) * sizeof(char));
+            enviar(sockfd, genero, (strlen(genero) + 1) * sizeof(char));
+            enviar(sockfd, salas, (strlen(salas) + 1) * sizeof(char));
+            /* O tamanho em bytes do id e o seu comprimento
+            retornado por strlen() acrescido de 1, para considerar
+            o caractere de final de cadeia, multiplicado pelo
+            tamanho em bytes de um char */
+        }
+        else {
+            char* msg = "\nO arquivo do novo filme nao pode ser criado\n";
+            enviar(sockfd, msg, (strlen(msg) + 1) * sizeof(char));
+        }
 
-    enviar(sockfd, id, (strlen(id) + 1)*sizeof(char)); 
-    /* O tamanho em bytes do id e o seu comprimento
-    retornado por strlen() acrescido de 1, para considerar
-    o caractere de final de cadeia, multiplicado pelo
-    tamanho em bytes de um char */
+    }
+    else {
+        char* msg = "\nO arquivo do novo filme nao pode ser criado\n";
+        enviar(sockfd, msg, (strlen(msg) + 1) * sizeof(char));
+    }
 
     free(id);
     free(titulo);
@@ -193,18 +292,92 @@ void cadastrar(int sockfd) {
     free(salas);
 }
 
-void operacao(int sockfd) {
+/*
+ * Funcao: remover
+ * ---------------
+ * Remove um filme existente a partir do seu identificador
+ *
+ * sockfd: inteiro descritor do socket
+ *
+ */
+void remover(int sockfd) {
+    char* id = receber(sockfd);
+    printf("\nRemovendo filme %s\n", id);
+
+    int ret = remove(id);
+    char* res;
+    if (ret == 0) {
+        printf("\nFilme %s removido com sucesso\n", id);
+        res = "0";
+    }
+    else {
+        printf("\nFilme %s nao pode ser removido\n", id);
+        res = "-1";
+    }
+    enviar(sockfd, res, (strlen(res) + 1) * sizeof(char));
+}
+
+/*
+ * Funcao: getTitulo
+ * -----------------
+ * Recebe do cliente um id e envia o titulo do filme correspondente
+ *
+ * sockfd: inteiro descritor do socket
+ *
+ */
+void getTitulo(int sockfd) {
+    char* id = receber(sockfd);
+    printf("\nConsultando filme %s\n", id);
+    char* titulo = lerFilme(id, 1);
+
+    enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char));
+}
+
+/*
+ * Funcao: getAll
+ * --------------
+ * Recebe do cliente um id e enviar todas as informacoes do filme
+ *
+ * sockfd: inteiro descritor do socket
+ *
+ */
+void getAll(int sockfd) {
+    char* id = receber(sockfd);
+    printf("\nConsultando filme %s\n", id);
+    
+    id = lerFilme(id, 0);
+    char* titulo = lerFilme(id, 1);
+    char* sinopse = lerFilme(id, 2);
+    char* genero = lerFilme(id, 3);
+    char* salas = lerFilme(id, 4);
+
+    enviar(sockfd, id, (strlen(id) + 1) * sizeof(char));
+    enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char));
+    enviar(sockfd, sinopse, (strlen(sinopse) + 1) * sizeof(char));
+    enviar(sockfd, genero, (strlen(genero) + 1) * sizeof(char));
+    enviar(sockfd, salas, (strlen(salas) + 1) * sizeof(char));
+}
+
+/*
+ * Funcao: escolheOperacao
+ * -----------------------
+ * Recebe do cliente a operacao escolhida e inicia o processamento
+ *
+ * sockfd: inteiro descritor do socket
+ *
+ */
+void escolheOperacao(int sockfd) {
     for (; ; ) {
         printf("\nRecebendo operacao do cliente\n");
         char* op = receber(sockfd);
         printf("\nExecutando operacao %s\n", op);
 
         if (strcmp(op, "1") == 0) cadastrar(sockfd);
-        else if (strcmp(op, "2") == 0) {} // TODO: Remover filme
+        else if (strcmp(op, "2") == 0) remover(sockfd); // TODO: Remover filme
         else if (strcmp(op, "3") == 0) {} // TODO: Listar titulo e salas de exibicao de todos os filmes
         else if (strcmp(op, "4") == 0) {} // TODO: Listar todos os titulos de filmes de um determinado genero
-        else if (strcmp(op, "5") == 0) {} // TODO: Retornar o titulo de um filme
-        else if (strcmp(op, "6") == 0) {} // TODO: Retornar todas as informacoes de um filme
+        else if (strcmp(op, "5") == 0) getTitulo(sockfd);
+        else if (strcmp(op, "6") == 0) getAll(sockfd);
         else if (strcmp(op, "7") == 0) {} // TODO: Listar todas as informacoes de todos os filmes
         else if (strcmp(op, "8") == 0) {
             printf("Cliente encerrou conexao\n");
@@ -253,7 +426,7 @@ int main(int argc, char** argv) {
             close(listenfd);
             // TODO: operações no catálogo de filmes
             //cadastrar(connfd);
-            operacao(connfd);
+            escolheOperacao(connfd);
             close(connfd);
             exit(0);
         }
