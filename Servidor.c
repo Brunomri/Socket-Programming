@@ -217,7 +217,6 @@ int main(int argc, char** argv) {
     int    listenfd, connfd;
     socklen_t clilen;
     struct sockaddr_in servaddr, cliaddr;
-    char   buf[MAXDATASIZE];
     pid_t childpid;
     time_t ticks;
 

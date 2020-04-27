@@ -11,7 +11,6 @@
 #include <unistd.h>
 
 #define SERV_PORT 3490
-#define MAXDATASIZE 500
 
 // Estrutura filme com título, sinopse, gênero, salas em exibição e identificador único
 //typedef struct filmes
@@ -257,7 +256,6 @@ void operacao(int sockfd) {
 
 int main (int argc, char** argv) {
 	int sockfd;
-	char buf[MAXDATASIZE];
 	struct sockaddr_in servaddr;
 
 	if (argc != 2) {
