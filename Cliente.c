@@ -13,26 +13,6 @@
 #define SERV_PORT 3490
 #define MAXDATASIZE 500
 
-void func(int sockfd)
-{
-	char buff[MAXDATASIZE];
-	int n;
-	for (;;) {
-		bzero(buff, sizeof(buff));
-		printf("Enter the string : ");
-		n = 0;
-		while ((buff[n++] = getchar()) != '\n');
-		write(sockfd, buff, sizeof(buff));
-		bzero(buff, sizeof(buff));
-		read(sockfd, buff, sizeof(buff));
-		printf("From Server : %s", buff);
-		if ((strncmp(buff, "exit", 4)) == 0) {
-			printf("Client Exit...\n");
-			break;
-		}
-	}
-}
-
 // Estrutura filme com título, sinopse, gênero, salas em exibição e identificador único
 //typedef struct filmes
 //{

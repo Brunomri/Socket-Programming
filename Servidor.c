@@ -10,37 +10,7 @@
 #include <unistd.h>
 
 #define LISTENQ 10
-#define MAXDATASIZE 500
 #define SERV_PORT 3490
-
-void func(int sockfd)
-{
-    char buff[MAXDATASIZE];
-    int n;
-    // infinite loop for chat 
-    for (;;) {
-        bzero(buff, MAXDATASIZE);
-
-        // read the message from client and copy it in buffer 
-        read(sockfd, buff, sizeof(buff));
-        // print buffer which contains the client contents 
-        printf("From client: %s\t To client : ", buff);
-        bzero(buff, MAXDATASIZE);
-        n = 0;
-        // copy server message in the buffer 
-        while ((buff[n++] = getchar()) != '\n')
-            ;
-
-        // and send that buffer to client 
-        write(sockfd, buff, sizeof(buff));
-
-        // if msg contains "Exit" then server exit and chat ended. 
-        if (strncmp("exit", buff, 4) == 0) {
-            printf("Server Exit...\n");
-            break;
-        }
-    }
-}
 
 // Estrutura filme com título, sinopse, gênero, salas em exibição e identificador único
 //typedef struct filmes
