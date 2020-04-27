@@ -23,8 +23,8 @@
 //} filme;
 
 /*
- * Funcao:  readn
- * --------------
+ * Funcao: readn
+ * -------------
  * Le n bytes de um socket. Repete o procedimento caso
  * limite do buffer seja atingido
  *
@@ -57,8 +57,8 @@ ssize_t readn(int fd, void* vptr, size_t n) {
 }
 
 /*
- * Funcao:  writen
- * ---------------
+ * Funcao: writen
+ * --------------
  * Escreve n bytes em um socket. Repete o procedimento caso
  * limite do buffer seja atingido
  *
@@ -89,8 +89,8 @@ ssize_t writen(int fd, const void* vptr, size_t n) {
 }
 
 /*
- * Funcao:  enviar
- * ---------------
+ * Funcao: enviar
+ * --------------
  * Encapsula 2 chamadas de writen para enviar o tamanho da variavel
  * antes do envio dos dados
  *
@@ -106,8 +106,8 @@ void enviar(int sockfd, const char* buff, size_t size) {
 }
 
 /*
- * Funcao:  receber
- * ----------------
+ * Funcao: receber
+ * ---------------
  * Encapsula 2 chamadas de readn para receber o tamanho da variavel
  * antes da leitura dos dados
  *
@@ -125,8 +125,8 @@ char* receber(int sockfd) {
 }
 
 /*
- * Funcao:  lerConsole
- * ----------------
+ * Funcao: lerConsole
+ * ------------------
  * Faz a leitura do console em um caractere por vez para alocar
  * dinamicamente a memoria necessaria para as variaveis
  *
@@ -163,8 +163,8 @@ char* lerConsole() {
 }
 
 /*
- * Funcao:  cadastrar
- * ------------------
+ * Funcao: cadastrar
+ * -----------------
  * Cadastra um novo filme enviando ao servidor seu titulo, sinopse, genero e
  * salas, recebendo do servidor um identificador unico
  *
@@ -207,18 +207,33 @@ void cadastrar(int sockfd) {
 }
 
 /*
- * Funcao:  remover
- * ----------------
+ * Funcao: remover
+ * ---------------
  * Remove um filme existente a partir do seu identificador
  *
  * sockfd: inteiro descritor do socket
  *
  */
 void remover(int sockfd) {
+	printf("\nRemover um filme\n");
+	printf("\nInsira o id:\n");
+	char* id = lerConsole();
 
+	enviar(sockfd, id, (strlen(id) + 1) * sizeof(char));
+	char* msg = receber(sockfd);
+	printf(msg, id);
 }
 
-void operacao(int sockfd) {
+/*
+ * Funcao: escolheOperacao
+ * -----------------------
+ * Atribui um numero para cada operacao disponivel. Obtem do console a operacao escolhida pelo cliente, envia o 
+ * codigo da operacao ao servidor e inicia o processamento chamando a funcao responsavel no lado cliente
+ *
+ * sockfd: inteiro descritor do socket
+ *
+ */
+void escolheOperacao(int sockfd) {
 	for ( ; ; ) {
 		char* op = NULL;
 		printf("\nServidor oferece as seguintes operacoes:\n");
@@ -235,10 +250,8 @@ void operacao(int sockfd) {
 		//printf("Operacao: %s\n", op);
 
 		enviar(sockfd, op, 2);
-		if (strcmp(op, "1") == 0) {
-			cadastrar(sockfd);
-		}
-		else if (strcmp(op, "2") == 0) {} // TODO: Remover filme
+		if (strcmp(op, "1") == 0) cadastrar(sockfd);
+		else if (strcmp(op, "2") == 0) remover(sockfd); // TODO: Remover filme
 		else if (strcmp(op, "3") == 0) {} // TODO: Listar titulo e salas de exibicao de todos os filmes
 		else if (strcmp(op, "4") == 0) {} // TODO: Listar todos os titulos de filmes de um determinado genero
 		else if (strcmp(op, "5") == 0) {} // TODO: Retornar o titulo de um filme
@@ -287,7 +300,7 @@ int main (int argc, char** argv) {
 
 	//func(sockfd);
 	//cadastrar(sockfd);
-	operacao(sockfd);
+	escolheOperacao(sockfd);
 
 	exit(0);
 }
