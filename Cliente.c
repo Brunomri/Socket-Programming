@@ -191,8 +191,12 @@ void cadastrar(int sockfd) {
 	enviar(sockfd, salas, (strlen(salas) + 1) * sizeof(char));
 
 	char *id = receber(sockfd);
+	titulo = receber(sockfd);
+	sinopse = receber(sockfd);
+	genero = receber(sockfd);
+	salas = receber(sockfd);
 
-	printf("\nNovo filme cadastrado:\n");
+	printf("\nNovo filme cadastrado com sucesso:\n");
 	printf("Id: %s\n", id);
 	printf("Titulo: %s\n", titulo);
 	printf("Sinopse: %s\n", sinopse);

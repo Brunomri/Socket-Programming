@@ -174,7 +174,7 @@ void cadastrar(int sockfd) {
         fputs(salas, fp);
         
         if ((ret = fclose(fp)) == 0) {
-            printf("\nNovo filme cadastrado:\n");
+            printf("\nNovo filme cadastrado com sucesso:\n");
             printf("Id: %s\n", id);
             printf("Titulo: %s\n", titulo);
             printf("Sinopse: %s\n", sinopse);
@@ -182,6 +182,10 @@ void cadastrar(int sockfd) {
             printf("Salas: %s\n", salas);
 
             enviar(sockfd, id, (strlen(id) + 1) * sizeof(char));
+            enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char));
+            enviar(sockfd, sinopse, (strlen(sinopse) + 1) * sizeof(char));
+            enviar(sockfd, genero, (strlen(genero) + 1) * sizeof(char));
+            enviar(sockfd, salas, (strlen(salas) + 1) * sizeof(char));
             /* O tamanho em bytes do id e o seu comprimento
             retornado por strlen() acrescido de 1, para considerar
             o caractere de final de cadeia, multiplicado pelo
