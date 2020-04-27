@@ -141,7 +141,7 @@ char* criarID() {
 }
 
 /*
- * Funcao: lerLinha
+ * Funcao: lerArquivo
  * ------------------
  * Faz a leitura de uma linha em arquivo um caractere por vez para
  * alocar dinamicamente a memoria necessaria para as variaveis
@@ -244,8 +244,8 @@ void cadastrar(int sockfd) {
     //printf("\nnovo id: %s\n", id);
 
     FILE* fp;
+    int ret;
     if ((fp = fopen(id, "w")) != NULL) {
-        int ret;
         fputs(id, fp);
         fputs("\n", fp);
         fputs(titulo, fp);
@@ -285,6 +285,13 @@ void cadastrar(int sockfd) {
         enviar(sockfd, msg, (strlen(msg) + 1) * sizeof(char));
     }
 
+    if ((fp = fopen("listaFilmes", "a")) != NULL) {
+        fputs(id, fp);
+        fputs("\n", fp);
+        if ((ret = fclose(fp)) == 0) printf("\nFilme %s adicionado a lista\n", id);
+        else printf("\nFilme %s nao pode ser adicionado a lista\n");
+    }
+
     free(id);
     free(titulo);
     free(sinopse);
@@ -315,6 +322,20 @@ void remover(int sockfd) {
         res = "-1";
     }
     enviar(sockfd, res, (strlen(res) + 1) * sizeof(char));
+
+    FILE *fp1, *fp2;
+    if((fp1 = fopen("listaFilmes", "r")) == NULL) printf("\nA lista de filmes nao pode ser aberta\n");
+    if((fp2 = fopen("temp", "w")) == NULL) printf("\nA lista temporaria nao pode ser aberta\n");
+
+    char* linha;
+    while (!feof(fp1)) {
+        linha = lerArquivo(fp1);
+        if (strcmp(linha, id) != 0) fputs(linha, fp2);
+    }
+    fclose(fp1);
+    fclose(fp2);
+    remove("listaFilmes");
+    rename("temp", "listaFilmes");
 }
 
 /*
