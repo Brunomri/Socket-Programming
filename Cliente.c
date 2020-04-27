@@ -243,6 +243,9 @@ void getTitulo(int sockfd) {
 	char* id = lerConsole();
 
 	enviar(sockfd, id, (strlen(id) + 1) * sizeof(char));
+	char* titulo = receber(sockfd);
+	if (strcmp(titulo, "-1") == 0) printf("\nO filme %s nao existe\n", id);
+	else printf("\nFilme % s possui titulo %s\n", id, titulo);
 }
 
 /*

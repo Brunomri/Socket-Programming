@@ -193,18 +193,33 @@ char* lerFilme(char* id, int param) {
         char* sinopse = lerArquivo(fp);
         char* genero = lerArquivo(fp);
         char* salas = lerArquivo(fp);
-        printf("\nId: %s\n", id);
-        printf("\nTitulo: %s\n", titulo);
-        printf("\nSinopse: %s\n", sinopse);
-        printf("\nGenero: %s\n", genero);
-        printf("\nSalas: %s\n", salas);
-
-        if (param == 0) return id;
-        else if (param == 1) return titulo;
-        else if (param == 2) return sinopse;
-        else if (param == 3) return genero;
-        else if (param == 4) return salas;
+        
+        printf("\nFilme %s possui", id);
+        if (param == 0) {
+            printf("id: %s\n", id);
+            return id;
+        }
+        else if (param == 1) {
+            printf("titulo: %s\n", titulo);
+            return titulo;
+        }
+        else if (param == 2) {
+            printf("sinopse: %s\n", sinopse);
+            return sinopse;
+        }
+        else if (param == 3) {
+            printf("genero: %s\n", genero);
+            return genero;
+        }
+        else if (param == 4) {
+            printf("salas: %s\n", salas);
+            return salas;
+        }
         else printf("\nErro: Parametros devem ser inteiros de 0 a 4\n");
+    }
+    else {
+        printf("\nO filme %s nao existe\n", id);
+        return "-1";
     }
 }
 
@@ -314,7 +329,8 @@ void getTitulo(int sockfd) {
     char* id = receber(sockfd);
     printf("\nConsultando filme %s\n", id);
     char* titulo = lerFilme(id, 1);
-    printf("\nFilme %s possui titulo %s\n", id, titulo);
+
+    enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char));
 }
 
 /*
