@@ -465,6 +465,14 @@ void getTituloSalas(int sockfd) {
     free(linhas);
 }
 
+/*
+ * Funcao: getTituloGenero
+ * -----------------------
+ * Servidor recebe um genero e retorna todos os titulos deste certo genero
+ *
+ * sockfd: inteiro descritor do socket
+ *
+ */
 void getTituloGenero(int sockfd) {
     char* generoAlvo = receber(sockfd);
     printf("\nObter todos os titulos com genero %s\n", generoAlvo);
@@ -529,6 +537,14 @@ void getAll(int sockfd) {
     enviar(sockfd, salas, (strlen(salas) + 1) * sizeof(char));
 }
 
+/*
+ * Funcao: getCatalogo
+ * -------------------
+ * Servidor envia todas as informacoes de todos os filmes
+ *
+ * sockfd: inteiro descritor do socket
+ *
+ */
 void getCatalogo(int sockfd) {
     printf("\nConsultando todas as informações de todos os filmes\n");
 

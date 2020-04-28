@@ -278,6 +278,14 @@ void getTituloSalas(int sockfd) {
 	free(salas);
 }
 
+/*
+ * Funcao: getTituloGenero
+ * -----------------------
+ * Cliente envia um genero e servidor retorna todos os titulos deste certo genero
+ *
+ * sockfd: inteiro descritor do socket
+ *
+ */
 void getTituloGenero(int sockfd) {
 	printf("\nListar todos os titulos de determinado genero\n");
 	printf("\nInsira o genero\n");
@@ -344,6 +352,14 @@ void getAll(int sockfd) {
 	free(salas);
 }
 
+/*
+ * Funcao: getCatalogo
+ * -------------------
+ * Servidor envia todas as informacoes de todos os filmes
+ *
+ * sockfd: inteiro descritor do socket
+ *
+ */
 void getCatalogo(int sockfd) {
 	printf("\nObter todas as informacoes de todos os filmes\n");
 
