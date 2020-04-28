@@ -146,6 +146,7 @@ char* criarID() {
  * Faz a leitura de uma linha em arquivo um caractere por vez para
  * alocar dinamicamente a memoria necessaria para as variaveis
  *
+ * retorna: sequencia de caracteres da linha
  */
 char* lerArquivo(FILE* fp) {
     char* line = NULL, * tmp = NULL;
@@ -176,6 +177,56 @@ char* lerArquivo(FILE* fp) {
     }
 
     return line;
+}
+
+/*
+ * Funcao: isEmpty
+ * ---------------
+ * Determina se uma sequencia de caracteres e vazia
+ *
+ * retorna: 1 se vazia, caso contrario 0
+ */
+int isEmpty(const char* str)
+{
+    char ch;
+
+    do
+    {
+        ch = *(str++);
+
+        // Verifica caracteres em branco
+        if (ch != ' ' && ch != '\t' && ch != '\n' && ch != '\r' && ch != '\0')
+            return 0;
+
+    } while (ch != '\0');
+
+    return 1;
+}
+
+int contaLinhas(char* file) {
+    FILE* fp;
+    char ch;
+    char ant;
+    int numLinhas = 0;
+
+    if ((fp = fopen(file, "r")) == NULL) {
+        printf("\nO arquivo %s nao pode ser aberto\n", file);
+        return -1;
+    }
+
+    while ((ch = fgetc(fp)) != EOF) {
+        if (ch == '\n') {
+            if (ant == ch) {
+                break;
+            }
+            numLinhas++;
+        }
+        ant = ch;
+    }
+    fclose(fp);
+    printf("\nO numero de linhas e %d\n", numLinhas);
+    
+    return numLinhas;
 }
 
 /*
@@ -330,7 +381,7 @@ void remover(int sockfd) {
     char* linha;
     while (!feof(fp1)) {
         linha = lerArquivo(fp1);
-        if (strcmp(linha, id) != 0) {
+        if ((strcmp(linha, id) != 0) && !isEmpty(linha)) {
             fputs(linha, fp2);
             fputs("\n", fp2);
         }
@@ -355,6 +406,36 @@ void getTitulo(int sockfd) {
     char* titulo = lerFilme(id, 1);
 
     enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char));
+}
+
+void getTituloSalas(int sockfd) {
+    printf("\nConsultando titulo e salas de exibicao de todos os filmes\n");
+
+    int numFilmes = contaLinhas("listaFilmes");
+    //printf("\nO catalogo tem %d filmes\n", numFilmes);
+
+    char* linhas = (char*)malloc(sizeof(numFilmes));
+    sprintf(linhas, "%d", numFilmes);
+    printf("\nO catalogo tem %s filmes\n", linhas);
+
+    enviar(sockfd, linhas, (strlen(linhas) + 1) * sizeof(char));
+
+    FILE* fp;
+    if ((fp = fopen("listaFilmes", "r")) == NULL) printf("\nA lista de filmes nao pode ser aberta\n");
+    else {
+        char* id;
+        char* titulo;
+        char* salas;
+        for (int i = 0; i < numFilmes; i++) {
+            id = lerArquivo(fp);
+            titulo = lerFilme(id, 1);
+            salas = lerFilme(id, 4);
+            printf("\nFilme %s tem titulo %s e salas %s\n", id, titulo, salas);
+
+            enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char));
+            enviar(sockfd, salas, (strlen(salas) + 1) * sizeof(char));
+        }
+    }
 }
 
 /*
@@ -398,7 +479,7 @@ void escolheOperacao(int sockfd) {
 
         if (strcmp(op, "1") == 0) cadastrar(sockfd);
         else if (strcmp(op, "2") == 0) remover(sockfd); // TODO: Remover filme
-        else if (strcmp(op, "3") == 0) {} // TODO: Listar titulo e salas de exibicao de todos os filmes
+        else if (strcmp(op, "3") == 0) getTituloSalas(sockfd); // TODO: Listar titulo e salas de exibicao de todos os filmes
         else if (strcmp(op, "4") == 0) {} // TODO: Listar todos os titulos de filmes de um determinado genero
         else if (strcmp(op, "5") == 0) getTitulo(sockfd);
         else if (strcmp(op, "6") == 0) getAll(sockfd);

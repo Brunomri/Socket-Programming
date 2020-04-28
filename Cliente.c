@@ -248,6 +248,24 @@ void getTitulo(int sockfd) {
 	else printf("\nFilme % s possui titulo %s\n", id, titulo);
 }
 
+void getTituloSalas(int sockfd) {
+	printf("\nConsultando titulo e salas de exibicao de todos os filmes\n");
+
+	char* linhas = receber(sockfd);
+	//printf("\nO catalogo tem %s filmes\n", numFilmes);
+	int numFilmes = atoi(linhas);
+	printf("\nO catalogo tem %d filmes\n", numFilmes);
+
+	char* titulo;
+	char* salas;
+
+	for (int i = 0; i < numFilmes; i++) {
+		titulo = receber(sockfd);
+		salas = receber(sockfd);
+		printf("\n%d - Titulo: %s\tSalas: %s\n", i + 1, titulo, salas);
+	}
+}
+
 /*
  * Funcao: getAll
  * --------------
@@ -307,7 +325,7 @@ void escolheOperacao(int sockfd) {
 		enviar(sockfd, op, 2);
 		if (strcmp(op, "1") == 0) cadastrar(sockfd);
 		else if (strcmp(op, "2") == 0) remover(sockfd); // TODO: Remover filme
-		else if (strcmp(op, "3") == 0) {} // TODO: Listar titulo e salas de exibicao de todos os filmes
+		else if (strcmp(op, "3") == 0) getTituloSalas(sockfd); // TODO: Listar titulo e salas de exibicao de todos os filmes
 		else if (strcmp(op, "4") == 0) {} // TODO: Listar todos os titulos de filmes de um determinado genero
 		else if (strcmp(op, "5") == 0) getTitulo(sockfd);
 		else if (strcmp(op, "6") == 0) getAll(sockfd);
