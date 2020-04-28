@@ -330,7 +330,10 @@ void remover(int sockfd) {
     char* linha;
     while (!feof(fp1)) {
         linha = lerArquivo(fp1);
-        if (strcmp(linha, id) != 0) fputs(linha, fp2);
+        if (strcmp(linha, id) != 0) {
+            fputs(linha, fp2);
+            fputs("\n", fp2);
+        }
     }
     fclose(fp1);
     fclose(fp2);
