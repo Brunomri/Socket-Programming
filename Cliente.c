@@ -248,6 +248,14 @@ void getTitulo(int sockfd) {
 	else printf("\nFilme % s possui titulo %s\n", id, titulo);
 }
 
+/*
+ * Funcao: getTituloSalas
+ * ----------------------
+ * Recebe do servidor o titulo e salas de exibicao de todos os filmes
+ *
+ * sockfd: inteiro descritor do socket
+ *
+ */
 void getTituloSalas(int sockfd) {
 	printf("\nConsultando titulo e salas de exibicao de todos os filmes\n");
 
@@ -264,6 +272,38 @@ void getTituloSalas(int sockfd) {
 		salas = receber(sockfd);
 		printf("\n%d - Titulo: %s\tSalas: %s\n", i + 1, titulo, salas);
 	}
+
+	free(linhas);
+	free(titulo);
+	free(salas);
+}
+
+void getTituloGenero(int sockfd) {
+	printf("\nListar todos os titulos de determinado genero\n");
+	printf("\nInsira o genero\n");
+	char* generoAlvo = lerConsole();
+
+	enviar(sockfd, generoAlvo, (strlen(generoAlvo) + 1) * sizeof(char));
+
+	char* linhas = receber(sockfd);
+	//printf("\nO catalogo tem %s filmes\n", numFilmes);
+	int numFilmes = atoi(linhas);
+	printf("\nO catalogo tem %d filmes\n", numFilmes);
+
+	char* titulo;
+	char* genero;
+	for (int i = 0; i < numFilmes; i++) {
+		titulo = receber(sockfd);
+		genero = receber(sockfd);
+		if (strcmp(genero, generoAlvo) == 0) {
+			printf("\n%d - Titulo: %s\tGenero: %s\n", i + 1, titulo, genero);
+		}		
+	}
+
+	free(generoAlvo);
+	free(linhas);
+	free(titulo);
+	free(genero);
 }
 
 /*
@@ -324,9 +364,9 @@ void escolheOperacao(int sockfd) {
 
 		enviar(sockfd, op, 2);
 		if (strcmp(op, "1") == 0) cadastrar(sockfd);
-		else if (strcmp(op, "2") == 0) remover(sockfd); // TODO: Remover filme
-		else if (strcmp(op, "3") == 0) getTituloSalas(sockfd); // TODO: Listar titulo e salas de exibicao de todos os filmes
-		else if (strcmp(op, "4") == 0) {} // TODO: Listar todos os titulos de filmes de um determinado genero
+		else if (strcmp(op, "2") == 0) remover(sockfd);
+		else if (strcmp(op, "3") == 0) getTituloSalas(sockfd);
+		else if (strcmp(op, "4") == 0) getTituloGenero(sockfd);
 		else if (strcmp(op, "5") == 0) getTitulo(sockfd);
 		else if (strcmp(op, "6") == 0) getAll(sockfd);
 		else if (strcmp(op, "7") == 0) {} // TODO: Listar todas as informacoes de todos os filmes

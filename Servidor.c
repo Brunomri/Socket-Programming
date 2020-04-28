@@ -184,6 +184,8 @@ char* lerArquivo(FILE* fp) {
  * ---------------
  * Determina se uma sequencia de caracteres e vazia
  *
+ * str: Sequencia de caracteres para analisar
+ *
  * retorna: 1 se vazia, caso contrario 0
  */
 int isEmpty(const char* str)
@@ -203,6 +205,15 @@ int isEmpty(const char* str)
     return 1;
 }
 
+/*
+ * Funcao: contaLinhas
+ * -------------------
+ * Determina o numero de linhas em um arquivo
+ *
+ * file: Arquivo para analisar
+ *
+ * retorna: numero de linhas do arquivo
+ */
 int contaLinhas(char* file) {
     FILE* fp;
     char ch;
@@ -244,6 +255,7 @@ char* lerFilme(char* id, int param) {
         char* sinopse = lerArquivo(fp);
         char* genero = lerArquivo(fp);
         char* salas = lerArquivo(fp);
+        fclose(fp);
         
         printf("\nFilme %s possui ", id);
         if (param == 0) {
@@ -375,9 +387,12 @@ void remover(int sockfd) {
     enviar(sockfd, res, (strlen(res) + 1) * sizeof(char));
 
     FILE *fp1, *fp2;
-    if((fp1 = fopen("listaFilmes", "r")) == NULL) printf("\nA lista de filmes nao pode ser aberta\n");
-    if((fp2 = fopen("temp", "w")) == NULL) printf("\nA lista temporaria nao pode ser aberta\n");
-
+    if ((fp1 = fopen("listaFilmes", "r")) == NULL) {
+        printf("\nA lista de filmes nao pode ser aberta\n");
+    }
+    if ((fp2 = fopen("temp", "w")) == NULL) {
+        printf("\nA lista temporaria nao pode ser aberta\n");
+    }
     char* linha;
     while (!feof(fp1)) {
         linha = lerArquivo(fp1);
@@ -408,6 +423,14 @@ void getTitulo(int sockfd) {
     enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char));
 }
 
+/*
+ * Funcao: getTituloSalas
+ * ----------------------
+ * Envia ao cliente o titulo e as salas de exibicao de todos os filmes
+ *
+ * sockfd: inteiro descritor do socket
+ *
+ */
 void getTituloSalas(int sockfd) {
     printf("\nConsultando titulo e salas de exibicao de todos os filmes\n");
 
@@ -435,7 +458,50 @@ void getTituloSalas(int sockfd) {
             enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char));
             enviar(sockfd, salas, (strlen(salas) + 1) * sizeof(char));
         }
+        free(id);
+        free(titulo);
+        free(salas);
     }
+    free(linhas);
+}
+
+void getTituloGenero(int sockfd) {
+    char* generoAlvo = receber(sockfd);
+    printf("\nObter todos os titulos com genero %s\n", generoAlvo);
+
+    int numFilmes = contaLinhas("listaFilmes");
+    char* linhas = (char*)malloc(sizeof(numFilmes));
+    sprintf(linhas, "%d", numFilmes);
+    printf("\nO catalogo tem %s filmes\n", linhas);
+
+    enviar(sockfd, linhas, (strlen(linhas) + 1) * sizeof(char));
+
+    FILE* fp;
+    if ((fp = fopen("listaFilmes", "r")) == NULL) printf("\nA lista de filmes nao pode ser aberta\n");
+    else {
+        char* id;
+        char* titulo;
+        char* genero;
+        for (int i = 0; i < numFilmes; i++) {
+            id = lerArquivo(fp);
+            titulo = lerFilme(id, 1);
+            genero = lerFilme(id, 3);
+            //if (strcmp(genero, generoAlvo) == 0) {
+            //    printf("\nFilme %s tem titulo %s e genero %s\n", id, titulo, genero);
+            //    enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char));
+            //    enviar(sockfd, genero, (strlen(genero) + 1) * sizeof(char));
+            //}
+            //else printf("\nTitulo %s nao faz parte do genero %s\n", titulo, genero);
+            printf("\nFilme %s tem titulo %s e genero %s\n", id, titulo, genero);
+            enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char));
+            enviar(sockfd, genero, (strlen(genero) + 1) * sizeof(char));
+        }
+        free(id);
+        free(titulo);
+        free(genero);
+    }
+    free(generoAlvo);
+    free(linhas);
 }
 
 /*
@@ -478,9 +544,9 @@ void escolheOperacao(int sockfd) {
         printf("\nExecutando operacao %s\n", op);
 
         if (strcmp(op, "1") == 0) cadastrar(sockfd);
-        else if (strcmp(op, "2") == 0) remover(sockfd); // TODO: Remover filme
-        else if (strcmp(op, "3") == 0) getTituloSalas(sockfd); // TODO: Listar titulo e salas de exibicao de todos os filmes
-        else if (strcmp(op, "4") == 0) {} // TODO: Listar todos os titulos de filmes de um determinado genero
+        else if (strcmp(op, "2") == 0) remover(sockfd);
+        else if (strcmp(op, "3") == 0) getTituloSalas(sockfd);
+        else if (strcmp(op, "4") == 0) getTituloGenero(sockfd);
         else if (strcmp(op, "5") == 0) getTitulo(sockfd);
         else if (strcmp(op, "6") == 0) getAll(sockfd);
         else if (strcmp(op, "7") == 0) {} // TODO: Listar todas as informacoes de todos os filmes
