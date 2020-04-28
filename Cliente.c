@@ -335,6 +335,44 @@ void getAll(int sockfd) {
 		printf("Genero: %s\n", genero);
 		printf("Salas: %s\n", salas);
 	}
+
+	free(id);
+	free(idServ);
+	free(titulo);
+	free(sinopse);
+	free(genero);
+	free(salas);
+}
+
+void getCatalogo(int sockfd) {
+	printf("\nObter todas as informacoes de todos os filmes\n");
+
+	char* linhas = receber(sockfd);
+	//printf("\nO catalogo tem %s filmes\n", numFilmes);
+	int numFilmes = atoi(linhas);
+	printf("\nO catalogo tem %d filmes\n", numFilmes);
+
+	char* id;
+	char* titulo;
+	char* sinopse;
+	char* genero;
+	char* salas;
+
+	for (int i = 0; i < numFilmes; i++) {
+		id = receber(sockfd);
+		titulo = receber(sockfd);
+		sinopse = receber(sockfd);
+		genero = receber(sockfd);
+		salas = receber(sockfd);
+		printf("\n%d - Id: %s\tTitulo: %s\tSinopse: %s\tGenero: %s\tSalas: %s\n", i + 1, id, titulo, sinopse, genero, salas);
+	}
+
+	free(linhas);
+	free(id);
+	free(titulo);
+	free(sinopse);
+	free(genero);
+	free(salas);
 }
 
 /*
@@ -369,7 +407,7 @@ void escolheOperacao(int sockfd) {
 		else if (strcmp(op, "4") == 0) getTituloGenero(sockfd);
 		else if (strcmp(op, "5") == 0) getTitulo(sockfd);
 		else if (strcmp(op, "6") == 0) getAll(sockfd);
-		else if (strcmp(op, "7") == 0) {} // TODO: Listar todas as informacoes de todos os filmes
+		else if (strcmp(op, "7") == 0) getCatalogo(sockfd); // TODO: Listar todas as informacoes de todos os filmes
 		else if (strcmp(op, "8") == 0) {
 			printf("Encerrando\n");
 			free(op);

@@ -529,6 +529,49 @@ void getAll(int sockfd) {
     enviar(sockfd, salas, (strlen(salas) + 1) * sizeof(char));
 }
 
+void getCatalogo(int sockfd) {
+    printf("\nConsultando todas as informações de todos os filmes\n");
+
+    int numFilmes = contaLinhas("listaFilmes");
+    //printf("\nO catalogo tem %d filmes\n", numFilmes);
+
+    char* linhas = (char*)malloc(sizeof(numFilmes));
+    sprintf(linhas, "%d", numFilmes);
+    printf("\nO catalogo tem %s filmes\n", linhas);
+
+    enviar(sockfd, linhas, (strlen(linhas) + 1) * sizeof(char));
+
+    FILE* fp;
+    if ((fp = fopen("listaFilmes", "r")) == NULL) printf("\nA lista de filmes nao pode ser aberta\n");
+    else {
+        char* id;
+        char* titulo;
+        char* sinopse;
+        char* genero;
+        char* salas;
+        for (int i = 0; i < numFilmes; i++) {
+            id = lerArquivo(fp);
+            titulo = lerFilme(id, 1);
+            sinopse = lerFilme(id, 2);
+            genero = lerFilme(id, 3);
+            salas = lerFilme(id, 4);
+            printf("\n%d - Id: %s\tTitulo: %s\tSinopse: %s\tGenero: %s\tSalas: %s\n", i + 1, id, titulo, sinopse, genero, salas);
+
+            enviar(sockfd, id, (strlen(id) + 1) * sizeof(char));
+            enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char));
+            enviar(sockfd, sinopse, (strlen(sinopse) + 1) * sizeof(char));
+            enviar(sockfd, genero, (strlen(genero) + 1) * sizeof(char));
+            enviar(sockfd, salas, (strlen(salas) + 1) * sizeof(char));
+        }
+        free(id);
+        free(titulo);
+        free(sinopse);
+        free(genero);
+        free(salas);
+    }
+    free(linhas);
+}
+
 /*
  * Funcao: escolheOperacao
  * -----------------------
@@ -549,7 +592,7 @@ void escolheOperacao(int sockfd) {
         else if (strcmp(op, "4") == 0) getTituloGenero(sockfd);
         else if (strcmp(op, "5") == 0) getTitulo(sockfd);
         else if (strcmp(op, "6") == 0) getAll(sockfd);
-        else if (strcmp(op, "7") == 0) {} // TODO: Listar todas as informacoes de todos os filmes
+        else if (strcmp(op, "7") == 0) getCatalogo(sockfd); // TODO: Listar todas as informacoes de todos os filmes
         else if (strcmp(op, "8") == 0) {
             printf("Cliente encerrou conexao\n");
             exit(0);
