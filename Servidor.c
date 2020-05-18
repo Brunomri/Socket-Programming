@@ -12,16 +12,6 @@
 #define LISTENQ 10
 #define SERV_PORT 3490
 
-// Estrutura filme com título, sinopse, gênero, salas em exibição e identificador único
-//typedef struct filmes
-//{
-//    char* id;
-//    char* titulo;
-//    char* sinopse;
-//    char* genero;
-//   char* salas;
-//} filme;
-
 /*
  * Funcao: readn
  * -------------
@@ -102,7 +92,7 @@ ssize_t writen(int fd, const void* vptr, size_t n) {
 void enviar(int sockfd, const char* buff, size_t size) {
     writen(sockfd, &size, sizeof(size_t));
     writen(sockfd, buff, size);
-    printf("\nEnviando: %s (%d bytes)\n", buff, size);
+    //printf("\nEnviando: %s (%d bytes)\n", buff, size);
 }
 
 /*
@@ -120,7 +110,7 @@ char* receber(int sockfd) {
     readn(sockfd, &size, sizeof(size_t));
     char* buff = (void*)malloc(size * sizeof(char));
     readn(sockfd, buff, size);
-    printf("\nRecebendo: %s (%d bytes)\n", buff, size);
+    //printf("\nRecebendo: %s (%d bytes)\n", buff, size);
     return buff;
 }
 
@@ -480,7 +470,7 @@ void getTituloGenero(int sockfd) {
     int numFilmes = contaLinhas("listaFilmes");
     char* linhas = (char*)malloc(sizeof(numFilmes));
     sprintf(linhas, "%d", numFilmes);
-    printf("\nO catalogo tem %s filmes\n", linhas);
+    //printf("\nO catalogo tem %s filmes\n", linhas);
 
     enviar(sockfd, linhas, (strlen(linhas) + 1) * sizeof(char));
 

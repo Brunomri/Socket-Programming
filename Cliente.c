@@ -12,16 +12,6 @@
 
 #define SERV_PORT 3490
 
-// Estrutura filme com título, sinopse, gênero, salas em exibição e identificador único
-//typedef struct filmes
-//{
-//	char id[MAXDATASIZE];
-//	char titulo[MAXDATASIZE];
-//	char sinopse[MAXDATASIZE];
-//	char genero[MAXDATASIZE];
-//	char salas[MAXDATASIZE];
-//} filme;
-
 /*
  * Funcao: readn
  * -------------
@@ -102,7 +92,7 @@ ssize_t writen(int fd, const void* vptr, size_t n) {
 void enviar(int sockfd, const char* buff, size_t size) {
 	writen(sockfd, &size, sizeof(size_t));
 	writen(sockfd, buff, size);
-	printf("\nEnviando: %s (%d bytes)\n", buff, size);
+	//printf("\nEnviando: %s (%d bytes)\n", buff, size);
 }
 
 /*
@@ -120,7 +110,7 @@ char* receber(int sockfd) {
 	readn(sockfd, &size, sizeof(size_t));
 	char* buff = (void*)malloc(size * sizeof(char));
 	readn(sockfd, buff, size);
-	printf("\nRecebendo: %s (%d bytes)\n", buff, size);
+	//printf("\nRecebendo: %s (%d bytes)\n", buff, size);
 	return buff;
 }
 
