@@ -12,6 +12,8 @@
 #define LISTENQ 10
 #define SERV_PORT 3490
 
+/* Programa servidor concorrente sobre conexão TCP */
+
 /*
  * Funcao: readn
  * -------------

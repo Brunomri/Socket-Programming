@@ -12,6 +12,8 @@
 
 #define SERV_PORT 3490
 
+/* Programa cliente sobre conexão TCP */
+
 /*
  * Funcao: readn
  * -------------
