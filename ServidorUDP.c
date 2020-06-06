@@ -91,9 +91,11 @@ ssize_t writen(int fd, const void* vptr, size_t n) {
  * size: numero de bytes a enviar
  *
  */
-void enviar(int sockfd, const char* buff, size_t size) {
-    writen(sockfd, &size, sizeof(size_t));
-    writen(sockfd, buff, size);
+void enviar(int sockfd, const char* buff, size_t size, const struct sockaddr* addr, socklen_t addrlen) {
+    //writen(sockfd, &size, sizeof(size_t));
+    //writen(sockfd, buff, size);
+    sendto(sockfd, &size, sizeof(size_t), 0, addr, addrlen);
+    sendto(sockfd, buff, size, 0, addr, addrlen);
     //printf("\nEnviando: %s (%d bytes)\n", buff, size);
 }
 
@@ -107,11 +109,13 @@ void enviar(int sockfd, const char* buff, size_t size) {
  *
  * retorna: ponteiro para os dados recebidos
  */
-char* receber(int sockfd) {
+char* receber(int sockfd, struct sockaddr* addr, int* addrlen) {
     size_t size;
-    readn(sockfd, &size, sizeof(size_t));
+    //readn(sockfd, &size, sizeof(size_t));
+    recvfrom(sockfd, &size, sizeof(size_t), 0, addr, addrlen);
     char* buff = (void*)malloc(size * sizeof(char));
-    readn(sockfd, buff, size);
+    //readn(sockfd, buff, size);
+    recvfrom(sockfd, buff, size, 0, addr, addrlen);
     //printf("\nRecebendo: %s (%d bytes)\n", buff, size);
     return buff;
 }
@@ -287,13 +291,13 @@ char* lerFilme(char* id, int param) {
  * sockfd: inteiro descritor do socket
  *
  */
-void cadastrar(int sockfd) {
+void cadastrar(int sockfd, struct sockaddr* addr, int addrlen) {
     printf("\nCadastrar novo filme:\n");
 
-    char* titulo = receber(sockfd);
-    char* sinopse = receber(sockfd);
-    char* genero = receber(sockfd);
-    char* salas = receber(sockfd);
+    char* titulo = receber(sockfd, addr, &addrlen);
+    char* sinopse = receber(sockfd, addr, &addrlen);
+    char* genero = receber(sockfd, addr, &addrlen);
+    char* salas = receber(sockfd, addr, &addrlen);
 
     char* id = criarID();
     //printf("\nnovo id: %s\n", id);
@@ -319,11 +323,11 @@ void cadastrar(int sockfd) {
             printf("Genero: %s\n", genero);
             printf("Salas: %s\n", salas);
 
-            enviar(sockfd, id, (strlen(id) + 1) * sizeof(char));
-            enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char));
-            enviar(sockfd, sinopse, (strlen(sinopse) + 1) * sizeof(char));
-            enviar(sockfd, genero, (strlen(genero) + 1) * sizeof(char));
-            enviar(sockfd, salas, (strlen(salas) + 1) * sizeof(char));
+            enviar(sockfd, id, (strlen(id) + 1) * sizeof(char), addr, addrlen);
+            enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char), addr, addrlen);
+            enviar(sockfd, sinopse, (strlen(sinopse) + 1) * sizeof(char), addr, addrlen);
+            enviar(sockfd, genero, (strlen(genero) + 1) * sizeof(char), addr, addrlen);
+            enviar(sockfd, salas, (strlen(salas) + 1) * sizeof(char), addr, addrlen);
             /* O tamanho em bytes do id e o seu comprimento
             retornado por strlen() acrescido de 1, para considerar
             o caractere de final de cadeia, multiplicado pelo
@@ -331,13 +335,13 @@ void cadastrar(int sockfd) {
         }
         else {
             char* msg = "\nO arquivo do novo filme nao pode ser criado\n";
-            enviar(sockfd, msg, (strlen(msg) + 1) * sizeof(char));
+            enviar(sockfd, msg, (strlen(msg) + 1) * sizeof(char), addr, addrlen);
         }
 
     }
     else {
         char* msg = "\nO arquivo do novo filme nao pode ser criado\n";
-        enviar(sockfd, msg, (strlen(msg) + 1) * sizeof(char));
+        enviar(sockfd, msg, (strlen(msg) + 1) * sizeof(char), addr, addrlen);
     }
 
     if ((fp = fopen("listaFilmes", "a")) != NULL) {
@@ -362,8 +366,8 @@ void cadastrar(int sockfd) {
  * sockfd: inteiro descritor do socket
  *
  */
-void remover(int sockfd) {
-    char* id = receber(sockfd);
+void remover(int sockfd, struct sockaddr* addr, int addrlen) {
+    char* id = receber(sockfd, addr, &addrlen);
     printf("\nRemovendo filme %s\n", id);
 
     int ret = remove(id);
@@ -376,7 +380,7 @@ void remover(int sockfd) {
         printf("\nFilme %s nao pode ser removido\n", id);
         res = "-1";
     }
-    enviar(sockfd, res, (strlen(res) + 1) * sizeof(char));
+    enviar(sockfd, res, (strlen(res) + 1) * sizeof(char), addr, addrlen);
 
     FILE* fp1, * fp2;
     if ((fp1 = fopen("listaFilmes", "r")) == NULL) {
@@ -407,12 +411,12 @@ void remover(int sockfd) {
  * sockfd: inteiro descritor do socket
  *
  */
-void getTitulo(int sockfd) {
-    char* id = receber(sockfd);
+void getTitulo(int sockfd, struct sockaddr* addr, int addrlen) {
+    char* id = receber(sockfd, addr, &addrlen);
     printf("\nConsultando filme %s\n", id);
     char* titulo = lerFilme(id, 1);
 
-    enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char));
+    enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char), addr, addrlen);
 }
 
 /*
@@ -423,7 +427,7 @@ void getTitulo(int sockfd) {
  * sockfd: inteiro descritor do socket
  *
  */
-void getTituloSalas(int sockfd) {
+void getTituloSalas(int sockfd, struct sockaddr* addr, int addrlen) {
     printf("\nConsultando titulo e salas de exibicao de todos os filmes\n");
 
     int numFilmes = contaLinhas("listaFilmes");
@@ -433,7 +437,7 @@ void getTituloSalas(int sockfd) {
     sprintf(linhas, "%d", numFilmes);
     printf("\nO catalogo tem %s filmes\n", linhas);
 
-    enviar(sockfd, linhas, (strlen(linhas) + 1) * sizeof(char));
+    enviar(sockfd, linhas, (strlen(linhas) + 1) * sizeof(char), addr, addrlen);
 
     FILE* fp;
     if ((fp = fopen("listaFilmes", "r")) == NULL) printf("\nA lista de filmes nao pode ser aberta\n");
@@ -447,8 +451,8 @@ void getTituloSalas(int sockfd) {
             salas = lerFilme(id, 4);
             printf("\nFilme %s tem titulo %s e salas %s\n", id, titulo, salas);
 
-            enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char));
-            enviar(sockfd, salas, (strlen(salas) + 1) * sizeof(char));
+            enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char), addr, addrlen);
+            enviar(sockfd, salas, (strlen(salas) + 1) * sizeof(char), addr, addrlen);
         }
         free(id);
         free(titulo);
@@ -465,8 +469,8 @@ void getTituloSalas(int sockfd) {
  * sockfd: inteiro descritor do socket
  *
  */
-void getTituloGenero(int sockfd) {
-    char* generoAlvo = receber(sockfd);
+void getTituloGenero(int sockfd, struct sockaddr* addr, int addrlen) {
+    char* generoAlvo = receber(sockfd, addr, &addrlen);
     printf("\nObter todos os titulos com genero %s\n", generoAlvo);
 
     int numFilmes = contaLinhas("listaFilmes");
@@ -474,7 +478,7 @@ void getTituloGenero(int sockfd) {
     sprintf(linhas, "%d", numFilmes);
     //printf("\nO catalogo tem %s filmes\n", linhas);
 
-    enviar(sockfd, linhas, (strlen(linhas) + 1) * sizeof(char));
+    enviar(sockfd, linhas, (strlen(linhas) + 1) * sizeof(char), addr, addrlen);
 
     FILE* fp;
     if ((fp = fopen("listaFilmes", "r")) == NULL) printf("\nA lista de filmes nao pode ser aberta\n");
@@ -488,13 +492,13 @@ void getTituloGenero(int sockfd) {
             genero = lerFilme(id, 3);
             //if (strcmp(genero, generoAlvo) == 0) {
             //    printf("\nFilme %s tem titulo %s e genero %s\n", id, titulo, genero);
-            //    enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char));
-            //    enviar(sockfd, genero, (strlen(genero) + 1) * sizeof(char));
+            //    enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char), addr, addrlen);
+            //    enviar(sockfd, genero, (strlen(genero) + 1) * sizeof(char), addr, addrlen);
             //}
             //else printf("\nTitulo %s nao faz parte do genero %s\n", titulo, genero);
             printf("\nFilme %s tem titulo %s e genero %s\n", id, titulo, genero);
-            enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char));
-            enviar(sockfd, genero, (strlen(genero) + 1) * sizeof(char));
+            enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char), addr, addrlen);
+            enviar(sockfd, genero, (strlen(genero) + 1) * sizeof(char), addr, addrlen);
         }
         free(id);
         free(titulo);
@@ -512,8 +516,8 @@ void getTituloGenero(int sockfd) {
  * sockfd: inteiro descritor do socket
  *
  */
-void getAll(int sockfd) {
-    char* id = receber(sockfd);
+void getAll(int sockfd, struct sockaddr* addr, int addrlen) {
+    char* id = receber(sockfd, addr, &addrlen);
     printf("\nConsultando filme %s\n", id);
 
     id = lerFilme(id, 0);
@@ -522,11 +526,11 @@ void getAll(int sockfd) {
     char* genero = lerFilme(id, 3);
     char* salas = lerFilme(id, 4);
 
-    enviar(sockfd, id, (strlen(id) + 1) * sizeof(char));
-    enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char));
-    enviar(sockfd, sinopse, (strlen(sinopse) + 1) * sizeof(char));
-    enviar(sockfd, genero, (strlen(genero) + 1) * sizeof(char));
-    enviar(sockfd, salas, (strlen(salas) + 1) * sizeof(char));
+    enviar(sockfd, id, (strlen(id) + 1) * sizeof(char), addr, addrlen);
+    enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char), addr, addrlen);
+    enviar(sockfd, sinopse, (strlen(sinopse) + 1) * sizeof(char), addr, addrlen);
+    enviar(sockfd, genero, (strlen(genero) + 1) * sizeof(char), addr, addrlen);
+    enviar(sockfd, salas, (strlen(salas) + 1) * sizeof(char), addr, addrlen);
 }
 
 /*
@@ -537,7 +541,7 @@ void getAll(int sockfd) {
  * sockfd: inteiro descritor do socket
  *
  */
-void getCatalogo(int sockfd) {
+void getCatalogo(int sockfd, struct sockaddr* addr, int addrlen) {
     printf("\nConsultando todas as informações de todos os filmes\n");
 
     int numFilmes = contaLinhas("listaFilmes");
@@ -547,7 +551,7 @@ void getCatalogo(int sockfd) {
     sprintf(linhas, "%d", numFilmes);
     printf("\nO catalogo tem %s filmes\n", linhas);
 
-    enviar(sockfd, linhas, (strlen(linhas) + 1) * sizeof(char));
+    enviar(sockfd, linhas, (strlen(linhas) + 1) * sizeof(char), addr, addrlen);
 
     FILE* fp;
     if ((fp = fopen("listaFilmes", "r")) == NULL) printf("\nA lista de filmes nao pode ser aberta\n");
@@ -565,11 +569,11 @@ void getCatalogo(int sockfd) {
             salas = lerFilme(id, 4);
             printf("\n%d - Id: %s\tTitulo: %s\tSinopse: %s\tGenero: %s\tSalas: %s\n", i + 1, id, titulo, sinopse, genero, salas);
 
-            enviar(sockfd, id, (strlen(id) + 1) * sizeof(char));
-            enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char));
-            enviar(sockfd, sinopse, (strlen(sinopse) + 1) * sizeof(char));
-            enviar(sockfd, genero, (strlen(genero) + 1) * sizeof(char));
-            enviar(sockfd, salas, (strlen(salas) + 1) * sizeof(char));
+            enviar(sockfd, id, (strlen(id) + 1) * sizeof(char), addr, addrlen);
+            enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char), addr, addrlen);
+            enviar(sockfd, sinopse, (strlen(sinopse) + 1) * sizeof(char), addr, addrlen);
+            enviar(sockfd, genero, (strlen(genero) + 1) * sizeof(char), addr, addrlen);
+            enviar(sockfd, salas, (strlen(salas) + 1) * sizeof(char), addr, addrlen);
         }
         free(id);
         free(titulo);
@@ -588,19 +592,19 @@ void getCatalogo(int sockfd) {
  * sockfd: inteiro descritor do socket
  *
  */
-void escolheOperacao(int sockfd) {
+void escolheOperacao(int sockfd, struct sockaddr* addr, int addrlen) {
     for (; ; ) {
         printf("\nRecebendo operacao do cliente\n");
-        char* op = receber(sockfd);
+        char* op = receber(sockfd, addr, &addrlen);
         printf("\nExecutando operacao %s\n", op);
 
-        if (strcmp(op, "1") == 0) cadastrar(sockfd);
-        else if (strcmp(op, "2") == 0) remover(sockfd);
-        else if (strcmp(op, "3") == 0) getTituloSalas(sockfd);
-        else if (strcmp(op, "4") == 0) getTituloGenero(sockfd);
-        else if (strcmp(op, "5") == 0) getTitulo(sockfd);
-        else if (strcmp(op, "6") == 0) getAll(sockfd);
-        else if (strcmp(op, "7") == 0) getCatalogo(sockfd); // TODO: Listar todas as informacoes de todos os filmes
+        if (strcmp(op, "1") == 0) cadastrar(sockfd, addr, addrlen);
+        else if (strcmp(op, "2") == 0) remover(sockfd, addr, addrlen);
+        else if (strcmp(op, "3") == 0) getTituloSalas(sockfd, addr, addrlen);
+        else if (strcmp(op, "4") == 0) getTituloGenero(sockfd, addr, addrlen);
+        else if (strcmp(op, "5") == 0) getTitulo(sockfd, addr, addrlen);
+        else if (strcmp(op, "6") == 0) getAll(sockfd, addr, addrlen);
+        else if (strcmp(op, "7") == 0) getCatalogo(sockfd, addr, addrlen); // TODO: Listar todas as informacoes de todos os filmes
         else if (strcmp(op, "8") == 0) {
             printf("Cliente encerrou conexao\n");
             exit(0);
@@ -609,52 +613,32 @@ void escolheOperacao(int sockfd) {
 }
 
 int main(int argc, char** argv) {
-    int    listenfd, connfd;
-    socklen_t clilen;
-    struct sockaddr_in servaddr, cliaddr;
-    pid_t childpid;
-    time_t ticks;
+    int    sockfd;
+    struct sockaddr_in addr, cliaddr;
 
-    if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
         perror("socket");
         exit(1);
     }
 
-    bzero(&servaddr, sizeof(servaddr));
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    servaddr.sin_port = htons(SERV_PORT);
+    bzero(&addr, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    addr.sin_port = htons(SERV_PORT);
 
-    if (bind(listenfd, (struct sockaddr*) & servaddr, sizeof(servaddr)) == -1) {
+    if (bind(sockfd, (struct sockaddr*) & addr, sizeof(addr)) == -1) {
         perror("bind");
-        exit(1);
-    }
-
-    if (listen(listenfd, LISTENQ) == -1) {
-        perror("listen");
         exit(1);
     }
 
     printf("Servidor aguardando conexoes\n");
 
-    for (; ; ) {
-        clilen = sizeof(cliaddr);
-        if ((connfd = accept(listenfd, (struct sockaddr*) & cliaddr, &clilen)) == -1) {
-            perror("accept");
-            exit(1);
-        }
+    int addrlen = sizeof(addr);
 
-        if ((childpid = fork()) == 0) {
-            close(listenfd);
-            // TODO: operações no catálogo de filmes
-            //cadastrar(connfd);
-            escolheOperacao(connfd);
-            close(connfd);
-            exit(0);
-        }
+    // Operações no catálogo de filmes
+    escolheOperacao(sockfd, (struct sockaddr*) & addr, addrlen);
 
-        close(connfd);
-        //break;
-    }
+    close(sockfd);
+
     return(0);
 }

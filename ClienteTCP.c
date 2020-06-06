@@ -455,10 +455,7 @@ int main (int argc, char** argv) {
 
 	printf("Conexao estabelecida\n");
 
-	// TODO: operações no catálogo de filmes
-
-	//func(sockfd);
-	//cadastrar(sockfd);
+	// Operações no catálogo de filmes
 	escolheOperacao(sockfd);
 
 	exit(0);

@@ -91,9 +91,11 @@ ssize_t writen(int fd, const void* vptr, size_t n) {
  * size: numero de bytes a enviar
  *
  */
-void enviar(int sockfd, const char* buff, size_t size) {
-	writen(sockfd, &size, sizeof(size_t));
-	writen(sockfd, buff, size);
+void enviar(int sockfd, const char* buff, size_t size, const struct sockaddr* addr, socklen_t addrlen) {
+	//writen(sockfd, &size, sizeof(size_t));
+	//writen(sockfd, buff, size);
+	sendto(sockfd, &size, sizeof(size_t), 0, addr, addrlen);
+	sendto(sockfd, buff, size, 0, addr, addrlen);
 	//printf("\nEnviando: %s (%d bytes)\n", buff, size);
 }
 
@@ -107,11 +109,13 @@ void enviar(int sockfd, const char* buff, size_t size) {
  *
  * retorna: ponteiro para os dados recebidos
  */
-char* receber(int sockfd) {
+char* receber(int sockfd, struct sockaddr* addr, int* addrlen) {
 	size_t size;
-	readn(sockfd, &size, sizeof(size_t));
+	//readn(sockfd, &size, sizeof(size_t));
+	recvfrom(sockfd, &size, sizeof(size_t), 0, addr, addrlen);
 	char* buff = (void*)malloc(size * sizeof(char));
-	readn(sockfd, buff, size);
+	//readn(sockfd, buff, size);
+	recvfrom(sockfd, buff, size, 0, addr, addrlen);
 	//printf("\nRecebendo: %s (%d bytes)\n", buff, size);
 	return buff;
 }
@@ -163,7 +167,7 @@ char* lerConsole() {
  * sockfd: inteiro descritor do socket
  *
  */
-void cadastrar(int sockfd) {
+void cadastrar(int sockfd, struct sockaddr* addr, int addrlen) {
 	printf("\nCadastrar novo filme:\n");
 	printf("\nInsira o titulo:\n");
 	char* titulo = lerConsole();
@@ -177,16 +181,18 @@ void cadastrar(int sockfd) {
 	printf("\nInsira as salas:\n");
 	char* salas = lerConsole();
 
-	enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char));
-	enviar(sockfd, sinopse, (strlen(sinopse) + 1) * sizeof(char));
-	enviar(sockfd, genero, (strlen(genero) + 1) * sizeof(char));
-	enviar(sockfd, salas, (strlen(salas) + 1) * sizeof(char));
+	//int addrlen = sizeof(addr);
 
-	char* id = receber(sockfd);
-	titulo = receber(sockfd);
-	sinopse = receber(sockfd);
-	genero = receber(sockfd);
-	salas = receber(sockfd);
+	enviar(sockfd, titulo, (strlen(titulo) + 1) * sizeof(char), addr, addrlen);
+	enviar(sockfd, sinopse, (strlen(sinopse) + 1) * sizeof(char), addr, addrlen);
+	enviar(sockfd, genero, (strlen(genero) + 1) * sizeof(char), addr, addrlen);
+	enviar(sockfd, salas, (strlen(salas) + 1) * sizeof(char), addr, addrlen);
+
+	char* id = receber(sockfd, addr, &addrlen);
+	titulo = receber(sockfd, addr, &addrlen);
+	sinopse = receber(sockfd, addr, &addrlen);
+	genero = receber(sockfd, addr, &addrlen);
+	salas = receber(sockfd, addr, &addrlen);
 
 	printf("\nNovo filme cadastrado com sucesso:\n");
 	printf("Id: %s\n", id);
@@ -210,13 +216,13 @@ void cadastrar(int sockfd) {
  * sockfd: inteiro descritor do socket
  *
  */
-void remover(int sockfd) {
+void remover(int sockfd, struct sockaddr* addr, int addrlen) {
 	printf("\nRemover um filme\n");
 	printf("\nInsira o id:\n");
 	char* id = lerConsole();
 
-	enviar(sockfd, id, (strlen(id) + 1) * sizeof(char));
-	char* msg = receber(sockfd);
+	enviar(sockfd, id, (strlen(id) + 1) * sizeof(char), addr, addrlen);
+	char* msg = receber(sockfd, addr, &addrlen);
 	if (strcmp(msg, "0") == 0) printf("\nFilme %s removido com sucesso\n", id);
 	else printf("\nFilme %s nao pode ser removido ou nao existe\n", id);
 }
@@ -229,13 +235,13 @@ void remover(int sockfd) {
  * sockfd: inteiro descritor do socket
  *
  */
-void getTitulo(int sockfd) {
+void getTitulo(int sockfd, struct sockaddr* addr, int addrlen) {
 	printf("\nConsultar o titulo de um filme\n");
 	printf("\nInsira o id\n");
 	char* id = lerConsole();
 
-	enviar(sockfd, id, (strlen(id) + 1) * sizeof(char));
-	char* titulo = receber(sockfd);
+	enviar(sockfd, id, (strlen(id) + 1) * sizeof(char), addr, addrlen);
+	char* titulo = receber(sockfd, addr, &addrlen);
 	if (strcmp(titulo, "-1") == 0) printf("\nO filme %s nao existe\n", id);
 	else printf("\nFilme % s possui titulo %s\n", id, titulo);
 }
@@ -248,10 +254,10 @@ void getTitulo(int sockfd) {
  * sockfd: inteiro descritor do socket
  *
  */
-void getTituloSalas(int sockfd) {
+void getTituloSalas(int sockfd, struct sockaddr* addr, int addrlen) {
 	printf("\nConsultando titulo e salas de exibicao de todos os filmes\n");
 
-	char* linhas = receber(sockfd);
+	char* linhas = receber(sockfd, addr, &addrlen);
 	//printf("\nO catalogo tem %s filmes\n", numFilmes);
 	int numFilmes = atoi(linhas);
 	printf("\nO catalogo tem %d filmes\n", numFilmes);
@@ -260,8 +266,8 @@ void getTituloSalas(int sockfd) {
 	char* salas;
 
 	for (int i = 0; i < numFilmes; i++) {
-		titulo = receber(sockfd);
-		salas = receber(sockfd);
+		titulo = receber(sockfd, addr, &addrlen);
+		salas = receber(sockfd, addr, &addrlen);
 		printf("\n%d - Titulo: %s\tSalas: %s\n", i + 1, titulo, salas);
 	}
 
@@ -278,14 +284,14 @@ void getTituloSalas(int sockfd) {
  * sockfd: inteiro descritor do socket
  *
  */
-void getTituloGenero(int sockfd) {
+void getTituloGenero(int sockfd, struct sockaddr* addr, int addrlen) {
 	printf("\nListar todos os titulos de determinado genero\n");
 	printf("\nInsira o genero\n");
 	char* generoAlvo = lerConsole();
 
-	enviar(sockfd, generoAlvo, (strlen(generoAlvo) + 1) * sizeof(char));
+	enviar(sockfd, generoAlvo, (strlen(generoAlvo) + 1) * sizeof(char), addr, addrlen);
 
-	char* linhas = receber(sockfd);
+	char* linhas = receber(sockfd, addr, &addrlen);
 	//printf("\nO catalogo tem %s filmes\n", numFilmes);
 	int numFilmes = atoi(linhas);
 	printf("\nO catalogo tem %d filmes\n", numFilmes);
@@ -293,8 +299,8 @@ void getTituloGenero(int sockfd) {
 	char* titulo;
 	char* genero;
 	for (int i = 0; i < numFilmes; i++) {
-		titulo = receber(sockfd);
-		genero = receber(sockfd);
+		titulo = receber(sockfd, addr, &addrlen);
+		genero = receber(sockfd, addr, &addrlen);
 		if (strcmp(genero, generoAlvo) == 0) {
 			printf("\n%d - Titulo: %s\tGenero: %s\n", i + 1, titulo, genero);
 		}
@@ -314,17 +320,17 @@ void getTituloGenero(int sockfd) {
  * sockfd: inteiro descritor do socket
  *
  */
-void getAll(int sockfd) {
+void getAll(int sockfd, struct sockaddr* addr, int addrlen) {
 	printf("\nConsultar todas as informacoes de um filme\n");
 	printf("\nInsira o id\n");
 	char* id = lerConsole();
 
-	enviar(sockfd, id, (strlen(id) + 1) * sizeof(char));
-	char* idServ = receber(sockfd);
-	char* titulo = receber(sockfd);
-	char* sinopse = receber(sockfd);
-	char* genero = receber(sockfd);
-	char* salas = receber(sockfd);
+	enviar(sockfd, id, (strlen(id) + 1) * sizeof(char), addr, addrlen);
+	char* idServ = receber(sockfd, addr, &addrlen);
+	char* titulo = receber(sockfd, addr, &addrlen);
+	char* sinopse = receber(sockfd, addr, &addrlen);
+	char* genero = receber(sockfd, addr, &addrlen);
+	char* salas = receber(sockfd, addr, &addrlen);
 
 	if (strcmp(idServ, "-1") == 0) printf("\nO filme %s nao existe\n", id);
 	else {
@@ -352,10 +358,10 @@ void getAll(int sockfd) {
  * sockfd: inteiro descritor do socket
  *
  */
-void getCatalogo(int sockfd) {
+void getCatalogo(int sockfd, struct sockaddr* addr, int addrlen) {
 	printf("\nObter todas as informacoes de todos os filmes\n");
 
-	char* linhas = receber(sockfd);
+	char* linhas = receber(sockfd, addr, &addrlen);
 	//printf("\nO catalogo tem %s filmes\n", numFilmes);
 	int numFilmes = atoi(linhas);
 	printf("\nO catalogo tem %d filmes\n", numFilmes);
@@ -367,11 +373,11 @@ void getCatalogo(int sockfd) {
 	char* salas;
 
 	for (int i = 0; i < numFilmes; i++) {
-		id = receber(sockfd);
-		titulo = receber(sockfd);
-		sinopse = receber(sockfd);
-		genero = receber(sockfd);
-		salas = receber(sockfd);
+		id = receber(sockfd, addr, &addrlen);
+		titulo = receber(sockfd, addr, &addrlen);
+		sinopse = receber(sockfd, addr, &addrlen);
+		genero = receber(sockfd, addr, &addrlen);
+		salas = receber(sockfd, addr, &addrlen);
 		printf("\n%d - Id: %s\tTitulo: %s\tSinopse: %s\tGenero: %s\tSalas: %s\n", i + 1, id, titulo, sinopse, genero, salas);
 	}
 
@@ -392,8 +398,8 @@ void getCatalogo(int sockfd) {
  * sockfd: inteiro descritor do socket
  *
  */
-void escolheOperacao(int sockfd) {
-	for (; ; ) {
+void escolheOperacao(int sockfd, struct sockaddr* addr, int addrlen) {
+	for ( ; ; ) {
 		char* op = NULL;
 		printf("\nServidor oferece as seguintes operacoes:\n");
 		printf("1 - Cadastrar novo filme\n");
@@ -408,14 +414,14 @@ void escolheOperacao(int sockfd) {
 		op = lerConsole();
 		//printf("Operacao: %s\n", op);
 
-		enviar(sockfd, op, 2);
-		if (strcmp(op, "1") == 0) cadastrar(sockfd);
-		else if (strcmp(op, "2") == 0) remover(sockfd);
-		else if (strcmp(op, "3") == 0) getTituloSalas(sockfd);
-		else if (strcmp(op, "4") == 0) getTituloGenero(sockfd);
-		else if (strcmp(op, "5") == 0) getTitulo(sockfd);
-		else if (strcmp(op, "6") == 0) getAll(sockfd);
-		else if (strcmp(op, "7") == 0) getCatalogo(sockfd); // TODO: Listar todas as informacoes de todos os filmes
+		enviar(sockfd, op, 2, addr, addrlen);
+		if (strcmp(op, "1") == 0) cadastrar(sockfd, addr, addrlen);
+		else if (strcmp(op, "2") == 0) remover(sockfd, addr, addrlen);
+		else if (strcmp(op, "3") == 0) getTituloSalas(sockfd, addr, addrlen);
+		else if (strcmp(op, "4") == 0) getTituloGenero(sockfd, addr, addrlen);
+		else if (strcmp(op, "5") == 0) getTitulo(sockfd, addr, addrlen);
+		else if (strcmp(op, "6") == 0) getAll(sockfd, addr, addrlen);
+		else if (strcmp(op, "7") == 0) getCatalogo(sockfd, addr, addrlen);
 		else if (strcmp(op, "8") == 0) {
 			printf("Encerrando\n");
 			free(op);
@@ -428,38 +434,32 @@ void escolheOperacao(int sockfd) {
 
 int main(int argc, char** argv) {
 	int sockfd;
-	struct sockaddr_in servaddr;
+	struct sockaddr_in addr;
 
 	if (argc != 2) {
 		perror("usage: tcpcli <IPaddress>");
 		exit(1);
 	}
 
-	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+	if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		perror("socket error");
 		exit(1);
 	}
 
-	bzero(&servaddr, sizeof(servaddr));
-	servaddr.sin_family = AF_INET;
-	servaddr.sin_port = htons(SERV_PORT);
-	if (inet_pton(AF_INET, argv[1], &servaddr.sin_addr) <= 0) {
+	bzero(&addr, sizeof(addr));
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(SERV_PORT);
+	if (inet_pton(AF_INET, argv[1], &addr.sin_addr) <= 0) {
 		perror("inet_pton error");
 		exit(1);
 	}
 
-	if (connect(sockfd, (struct sockaddr*) & servaddr, sizeof(servaddr)) < 0) {
-		perror("connect error");
-		exit(1);
-	}
+	int addrlen = sizeof(addr);
 
-	printf("Conexao estabelecida\n");
+	// Operações no catálogo de filmes
+	escolheOperacao(sockfd, (struct sockaddr*)&addr, addrlen);
 
-	// TODO: operações no catálogo de filmes
-
-	//func(sockfd);
-	//cadastrar(sockfd);
-	escolheOperacao(sockfd);
+	close(sockfd);
 
 	exit(0);
 }
