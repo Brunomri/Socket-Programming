@@ -409,7 +409,6 @@ void escolheOperacao(int sockfd) {
 		//printf("Operacao: %s\n", op);
 
 		enviar(sockfd, op, 2);
-		char* status = receber(sockfd);
 		if (strcmp(op, "1") == 0) cadastrar(sockfd);
 		else if (strcmp(op, "8") == 0) {
 			printf("Encerrando\n");
@@ -417,6 +416,7 @@ void escolheOperacao(int sockfd) {
 			return;
 		}
 		else {
+			char* status = receber(sockfd);
 			if (strcmp(status, "0") == 0) {
 				printf("\nO catalogo de filmes esta vazio, somente a operacao de cadastro pode ser realizada\n");
 			}
@@ -429,9 +429,9 @@ void escolheOperacao(int sockfd) {
 				else if (strcmp(op, "7") == 0) getCatalogo(sockfd); // TODO: Listar todas as informacoes de todos os filmes
 				else printf("Operacao indefinida\n");
 			}
+			free(status);
 		}
 		free(op);
-		free(status);
 	}
 }
 
