@@ -589,21 +589,34 @@ void getCatalogo(int sockfd) {
  *
  */
 void escolheOperacao(int sockfd) {
-    for (; ; ) {
+    for ( ; ; ) {
         printf("\nRecebendo operacao do cliente\n");
         char* op = receber(sockfd);
         printf("\nExecutando operacao %s\n", op);
 
         if (strcmp(op, "1") == 0) cadastrar(sockfd);
-        else if (strcmp(op, "2") == 0) remover(sockfd);
-        else if (strcmp(op, "3") == 0) getTituloSalas(sockfd);
-        else if (strcmp(op, "4") == 0) getTituloGenero(sockfd);
-        else if (strcmp(op, "5") == 0) getTitulo(sockfd);
-        else if (strcmp(op, "6") == 0) getAll(sockfd);
-        else if (strcmp(op, "7") == 0) getCatalogo(sockfd); // TODO: Listar todas as informacoes de todos os filmes
         else if (strcmp(op, "8") == 0) {
             printf("Cliente encerrou conexao\n");
             exit(0);
+        }
+        else {
+            char* status;
+            int numFilmes = contaLinhas("listaFilmes");
+            if (numFilmes == -1 || numFilmes == 0) {
+                printf("\nO catalogo de filmes esta vazio, somente a operacao de cadastro pode ser realizada\n");
+                status = "0";
+                enviar(sockfd, status, (strlen(status) + 1) * sizeof(char));
+            }
+            else {
+                status = "1";
+                enviar(sockfd, status, (strlen(status) + 1) * sizeof(char));
+                if (strcmp(op, "2") == 0) remover(sockfd);
+                else if (strcmp(op, "3") == 0) getTituloSalas(sockfd);
+                else if (strcmp(op, "4") == 0) getTituloGenero(sockfd);
+                else if (strcmp(op, "5") == 0) getTitulo(sockfd);
+                else if (strcmp(op, "6") == 0) getAll(sockfd);
+                else getCatalogo(sockfd); // TODO: Listar todas as informacoes de todos os filmes
+            }
         }
     }
 }
