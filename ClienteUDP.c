@@ -15,72 +15,6 @@
 /* Programa cliente sobre protocolo UDP */
 
 /*
- * Funcao: readn
- * -------------
- * Le n bytes de um socket. Repete o procedimento caso
- * limite do buffer seja atingido
- *
- * fd: inteiro descritor do socket
- * vptr: ponteiro para variavel que armazena os dados
- * n: numero de bytes a serem lidos
- *
- * retorna: numero de bytes lidos
- */
-ssize_t readn(int fd, void* vptr, size_t n) {
-	size_t nleft;
-	ssize_t nread;
-	char* ptr;
-
-	ptr = vptr;
-	nleft = n;
-	while (nleft > 0) {
-		if ((nread = read(fd, ptr, nleft)) < 0) {
-			if (errno == EINTR)
-				nread = 0;
-			else
-				return -1;
-		}
-		else if (nread == 0)
-			break;
-		nleft -= nread;
-		ptr += nread;
-	}
-	return (n - nleft);
-}
-
-/*
- * Funcao: writen
- * --------------
- * Escreve n bytes em um socket. Repete o procedimento caso
- * limite do buffer seja atingido
- *
- * fd: inteiro descritor do socket
- * vptr: ponteiro para variavel que armazena os dados
- * n: numero de bytes a serem escritos
- *
- * retorna: numero de bytes escritos
- */
-ssize_t writen(int fd, const void* vptr, size_t n) {
-	size_t nleft;
-	ssize_t nwritten;
-	const char* ptr;
-
-	ptr = vptr;
-	nleft = n;
-	while (nleft > 0) {
-		if ((nwritten = write(fd, ptr, nleft)) <= 0) {
-			if (nwritten < 0 && errno == EINTR)
-				nwritten = 0;
-			else
-				return -1;
-		}
-		nleft -= nwritten;
-		ptr += nwritten;
-	}
-	return n;
-}
-
-/*
  * Funcao: enviar
  * --------------
  * Encapsula 2 chamadas de writen para enviar o tamanho da variavel
@@ -92,8 +26,6 @@ ssize_t writen(int fd, const void* vptr, size_t n) {
  *
  */
 void enviar(int sockfd, const char* buff, size_t size, const struct sockaddr* addr, socklen_t addrlen) {
-	//writen(sockfd, &size, sizeof(size_t));
-	//writen(sockfd, buff, size);
 	sendto(sockfd, &size, sizeof(size_t), 0, addr, addrlen);
 	sendto(sockfd, buff, size, 0, addr, addrlen);
 	//printf("\nEnviando: %s (%d bytes)\n", buff, size);
@@ -111,10 +43,8 @@ void enviar(int sockfd, const char* buff, size_t size, const struct sockaddr* ad
  */
 char* receber(int sockfd, struct sockaddr* addr, int* addrlen) {
 	size_t size;
-	//readn(sockfd, &size, sizeof(size_t));
 	recvfrom(sockfd, &size, sizeof(size_t), 0, addr, addrlen);
 	char* buff = (void*)malloc(size * sizeof(char));
-	//readn(sockfd, buff, size);
 	recvfrom(sockfd, buff, size, 0, addr, addrlen);
 	//printf("\nRecebendo: %s (%d bytes)\n", buff, size);
 	return buff;
@@ -304,6 +234,7 @@ void getTituloGenero(int sockfd, struct sockaddr* addr, int addrlen) {
 		if (strcmp(genero, generoAlvo) == 0) {
 			printf("\n%d - Titulo: %s\tGenero: %s\n", i + 1, titulo, genero);
 		}
+		else printf("\nNao existem filmes do genero %s cadastrados\n", generoAlvo);
 	}
 
 	free(generoAlvo);
@@ -393,7 +324,9 @@ void getCatalogo(int sockfd, struct sockaddr* addr, int addrlen) {
  * Funcao: escolheOperacao
  * -----------------------
  * Atribui um numero para cada operacao disponivel. Obtem do console a operacao escolhida pelo cliente, envia o
- * codigo da operacao ao servidor e inicia o processamento chamando a funcao responsavel no lado cliente
+ * codigo da operacao ao servidor e inicia o processamento chamando a funcao responsavel no lado cliente. Em seguida recebe do servidor
+ * a variavel status que informa se existem filmes cadastrados no catálogo de filmes ou não, a fim de tratar o caso de lista vazia onde somente
+ * a operacao de cadastro podera ser realizada.
  *
  * sockfd: inteiro descritor do socket
  *
@@ -416,18 +349,27 @@ void escolheOperacao(int sockfd, struct sockaddr* addr, int addrlen) {
 
 		enviar(sockfd, op, 2, addr, addrlen);
 		if (strcmp(op, "1") == 0) cadastrar(sockfd, addr, addrlen);
-		else if (strcmp(op, "2") == 0) remover(sockfd, addr, addrlen);
-		else if (strcmp(op, "3") == 0) getTituloSalas(sockfd, addr, addrlen);
-		else if (strcmp(op, "4") == 0) getTituloGenero(sockfd, addr, addrlen);
-		else if (strcmp(op, "5") == 0) getTitulo(sockfd, addr, addrlen);
-		else if (strcmp(op, "6") == 0) getAll(sockfd, addr, addrlen);
-		else if (strcmp(op, "7") == 0) getCatalogo(sockfd, addr, addrlen);
 		else if (strcmp(op, "8") == 0) {
 			printf("Encerrando\n");
 			free(op);
 			return;
 		}
-		else printf("Operacao indefinida\n");
+		else {
+			char* status = receber(sockfd, addr, &addrlen);
+			if (strcmp(status, "0") == 0) {
+				printf("\nO catalogo de filmes esta vazio, somente a operacao de cadastro pode ser realizada\n");
+			}
+			else {
+				if (strcmp(op, "2") == 0) remover(sockfd, addr, addrlen);
+				else if (strcmp(op, "3") == 0) getTituloSalas(sockfd, addr, addrlen);
+				else if (strcmp(op, "4") == 0) getTituloGenero(sockfd, addr, addrlen);
+				else if (strcmp(op, "5") == 0) getTitulo(sockfd, addr, addrlen);
+				else if (strcmp(op, "6") == 0) getAll(sockfd, addr, addrlen);
+				else if (strcmp(op, "7") == 0) getCatalogo(sockfd, addr, addrlen);
+				else printf("Operacao indefinida\n");
+			}
+			free(status);
+		}
 		free(op);
 	}
 }

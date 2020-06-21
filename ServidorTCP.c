@@ -352,6 +352,7 @@ void cadastrar(int sockfd) {
     free(sinopse);
     free(genero);
     free(salas);
+    fclose(fp);
 }
 
 /*
