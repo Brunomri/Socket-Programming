@@ -297,7 +297,8 @@ void getTituloGenero(int sockfd) {
 		genero = receber(sockfd);
 		if (strcmp(genero, generoAlvo) == 0) {
 			printf("\n%d - Titulo: %s\tGenero: %s\n", i + 1, titulo, genero);
-		}		
+		}
+		else printf("\nNao existem filmes do genero %s cadastrados\n", generoAlvo);
 	}
 
 	free(generoAlvo);
