@@ -387,7 +387,9 @@ void getCatalogo(int sockfd) {
  * Funcao: escolheOperacao
  * -----------------------
  * Atribui um numero para cada operacao disponivel. Obtem do console a operacao escolhida pelo cliente, envia o 
- * codigo da operacao ao servidor e inicia o processamento chamando a funcao responsavel no lado cliente
+ * codigo da operacao ao servidor e inicia o processamento chamando a funcao responsavel no lado cliente. Em seguida recebe do servidor
+ * a variavel status que informa se existem filmes cadastrados no catálogo de filmes ou não, a fim de tratar o caso de lista vazia onde somente
+ * a operacao de cadastro podera ser realizada.
  *
  * sockfd: inteiro descritor do socket
  *
@@ -426,7 +428,7 @@ void escolheOperacao(int sockfd) {
 				else if (strcmp(op, "4") == 0) getTituloGenero(sockfd);
 				else if (strcmp(op, "5") == 0) getTitulo(sockfd);
 				else if (strcmp(op, "6") == 0) getAll(sockfd);
-				else if (strcmp(op, "7") == 0) getCatalogo(sockfd); // TODO: Listar todas as informacoes de todos os filmes
+				else if (strcmp(op, "7") == 0) getCatalogo(sockfd);
 				else printf("Operacao indefinida\n");
 			}
 			free(status);

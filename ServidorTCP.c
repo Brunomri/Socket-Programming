@@ -454,6 +454,7 @@ void getTituloSalas(int sockfd) {
         free(titulo);
         free(salas);
     }
+    fclose(fp);
     free(linhas);
 }
 
@@ -500,6 +501,7 @@ void getTituloGenero(int sockfd) {
         free(titulo);
         free(genero);
     }
+    fclose(fp);
     free(generoAlvo);
     free(linhas);
 }
@@ -577,13 +579,17 @@ void getCatalogo(int sockfd) {
         free(genero);
         free(salas);
     }
+    fclose(fp);
     free(linhas);
 }
 
 /*
  * Funcao: escolheOperacao
  * -----------------------
- * Recebe do cliente a operacao escolhida e inicia o processamento
+ * Recebe do cliente a operacao escolhida e inicia o processamento. Servidor chama funcao que conta o numero
+ * de linhas do catalogo de filmes, para tratar o caso de ainda não existirem filmes cadastrados. Se a lista de filmes
+ * ainda não existir ou estiver vazia, a variavel status = 0, caso contrário status = 1. O status também é enviado
+ * ao cliente para fazer a tratativa correspondente.
  *
  * sockfd: inteiro descritor do socket
  *
@@ -615,7 +621,7 @@ void escolheOperacao(int sockfd) {
                 else if (strcmp(op, "4") == 0) getTituloGenero(sockfd);
                 else if (strcmp(op, "5") == 0) getTitulo(sockfd);
                 else if (strcmp(op, "6") == 0) getAll(sockfd);
-                else getCatalogo(sockfd); // TODO: Listar todas as informacoes de todos os filmes
+                else getCatalogo(sockfd);
             }
         }
     }
