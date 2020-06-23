@@ -228,14 +228,18 @@ void getTituloGenero(int sockfd, struct sockaddr* addr, int addrlen) {
 
 	char* titulo;
 	char* genero;
+	int existe = 0;
 	for (int i = 0; i < numFilmes; i++) {
 		titulo = receber(sockfd, addr, &addrlen);
 		genero = receber(sockfd, addr, &addrlen);
 		if (strcmp(genero, generoAlvo) == 0) {
 			printf("\n%d - Titulo: %s\tGenero: %s\n", i + 1, titulo, genero);
+			existe = 1;
 		}
-		else printf("\nNao existem filmes do genero %s cadastrados\n", generoAlvo);
+		//else printf("\nNao existem filmes do genero %s cadastrados\n", generoAlvo);
 	}
+
+	if(existe == 0) printf("\nNao existem filmes do genero %s cadastrados\n", generoAlvo);
 
 	free(generoAlvo);
 	free(linhas);

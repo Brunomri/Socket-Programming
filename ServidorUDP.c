@@ -530,7 +530,7 @@ void getCatalogo(int sockfd, struct sockaddr* addr, int addrlen) {
  *
  */
 void escolheOperacao(int sockfd, struct sockaddr* addr, int addrlen) {
-    for (; ; ) {
+    for ( ; ; ) {
         printf("\nRecebendo operacao do cliente\n");
         char* op = receber(sockfd, addr, &addrlen);
         printf("\nExecutando operacao %s\n", op);
