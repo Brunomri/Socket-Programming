@@ -9,20 +9,26 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <poll.h>
 
 #define SERV_PORT 3490
+#define TIMEOUT 60000
+
+static void escolheOperacao(int sockfd, struct sockaddr* addr, int addrlen);
 
 /* Programa cliente sobre protocolo UDP */
 
 /*
  * Funcao: enviar
  * --------------
- * Encapsula 2 chamadas de writen para enviar o tamanho da variavel
+ * Encapsula 2 chamadas de sendTo para enviar o tamanho da variavel
  * antes do envio dos dados
  *
  * sockfd: inteiro descritor do socket
  * buff: ponteiro para variavel que armazena os dados
  * size: numero de bytes a enviar
+ * addr: ponteiro para a estrutura que contem o endereço IP e porta
+ * addrlen: inteiro referente ao tamanho da estrutura acima
  *
  */
 void enviar(int sockfd, const char* buff, size_t size, const struct sockaddr* addr, socklen_t addrlen) {
@@ -32,19 +38,62 @@ void enviar(int sockfd, const char* buff, size_t size, const struct sockaddr* ad
 }
 
 /*
- * Funcao: receber
- * ---------------
- * Encapsula 2 chamadas de readn para receber o tamanho da variavel
- * antes da leitura dos dados
+ * Funcao: checkSocket
+ * -------------------
+ * Utiliza a primitiva poll para verificar se um socket tem
+ * dados a ler em um intervalo TIMEOUT definido como constante no topo do programa. Caso tenha, a funcao
+ * retorna e o programa continua normalmente.
+ * Caso contrario, escolheOperacao é chamada e o cliente aguarda que o usuario solicite uma
+ * nova operacao.
  *
  * sockfd: inteiro descritor do socket
+ * addr: ponteiro para a estrutura que contem o endereço IP e porta
+ * addrlen: inteiro referente ao tamanho da estrutura acima
  *
- * retorna: ponteiro para os dados recebidos
+ */
+void checkSocket(int sockfd, struct sockaddr* addr, int addrlen) {
+	struct pollfd pfds[1];
+	pfds[0].fd = sockfd;
+	pfds[0].events = POLLIN;
+	int num_events = poll(pfds, 1, TIMEOUT);
+
+	if (num_events == 0) {
+		printf("\nTempo limite excedido\n");
+		escolheOperacao(sockfd, (struct sockaddr*)&addr, addrlen);
+	}
+	else {
+		int pollin_happened = pfds[0].revents & POLLIN;
+		if (pollin_happened) {
+			//printf("\nSocket %d esta pronto para ler\n", pfds[0].fd);
+			return;
+		}
+		else {
+			printf("\nEvento inesperado: %d\n", pfds[0].revents);
+			escolheOperacao(sockfd, (struct sockaddr*)&addr, addrlen);
+		}
+	}
+}
+
+/*
+ * Funcao: receber
+ * ---------------
+ * Encapsula 2 chamadas de checkSocket para verificar se existem dados a ler, caso nao existam
+ * dados no socket, checkSocket chama novamente escolheOperacao para aguarda uma nova mensagem.
+ * Se houver dados a ler, a chamada recvfrom prossegue. A primeira chamada de recvfrom recebe o tamanho
+ * do dado para realizar a alocacao dinamica da variavel e segunda chamada recebe o dado em si.
+ *
+ * sockfd: inteiro descritor do socket
+ * addr: ponteiro para a estrutura que contem o endereço IP e porta
+ * addrlen: inteiro referente ao tamanho da estrutura acima
+ *
+ * retorna: ponteiro buff para os dados recebidos
  */
 char* receber(int sockfd, struct sockaddr* addr, int* addrlen) {
 	size_t size;
+	checkSocket(sockfd, (struct sockaddr*)&addr, *addrlen);
 	recvfrom(sockfd, &size, sizeof(size_t), 0, addr, addrlen);
 	char* buff = (void*)malloc(size * sizeof(char));
+	checkSocket(sockfd, (struct sockaddr*)&addr, *addrlen);
 	recvfrom(sockfd, buff, size, 0, addr, addrlen);
 	//printf("\nRecebendo: %s (%d bytes)\n", buff, size);
 	return buff;
@@ -91,10 +140,12 @@ char* lerConsole() {
 /*
  * Funcao: cadastrar
  * -----------------
- * Cadastra um novo filme enviando ao servidor seu titulo, sinopse, genero e
- * salas, recebendo do servidor um identificador unico
+ * Cadastra um novo filme a partir do titulo, sinopse, genero e
+ * salas recebidos do cliente, envia de volta um identificador unico
  *
  * sockfd: inteiro descritor do socket
+ * addr: ponteiro para a estrutura que contem o endereço IP e porta
+ * addrlen: inteiro referente ao tamanho da estrutura acima
  *
  */
 void cadastrar(int sockfd, struct sockaddr* addr, int addrlen) {
@@ -144,7 +195,8 @@ void cadastrar(int sockfd, struct sockaddr* addr, int addrlen) {
  * Remove um filme existente a partir do seu identificador
  *
  * sockfd: inteiro descritor do socket
- *
+ * addr: ponteiro para a estrutura que contem o endereço IP e porta
+ * addrlen: inteiro referente ao tamanho da estrutura acima
  */
 void remover(int sockfd, struct sockaddr* addr, int addrlen) {
 	printf("\nRemover um filme\n");
@@ -160,9 +212,11 @@ void remover(int sockfd, struct sockaddr* addr, int addrlen) {
 /*
  * Funcao: getTitulo
  * -----------------
- * Envia para o servidor o id de um filme recebe seu titulo
+ * Recebe do cliente um id e envia o titulo do filme correspondente
  *
  * sockfd: inteiro descritor do socket
+ * addr: ponteiro para a estrutura que contem o endereço IP e porta
+ * addrlen: inteiro referente ao tamanho da estrutura acima
  *
  */
 void getTitulo(int sockfd, struct sockaddr* addr, int addrlen) {
@@ -179,9 +233,11 @@ void getTitulo(int sockfd, struct sockaddr* addr, int addrlen) {
 /*
  * Funcao: getTituloSalas
  * ----------------------
- * Recebe do servidor o titulo e salas de exibicao de todos os filmes
+ * Envia ao cliente o titulo e as salas de exibicao de todos os filmes
  *
  * sockfd: inteiro descritor do socket
+ * addr: ponteiro para a estrutura que contem o endereço IP e porta
+ * addrlen: inteiro referente ao tamanho da estrutura acima
  *
  */
 void getTituloSalas(int sockfd, struct sockaddr* addr, int addrlen) {
@@ -209,9 +265,11 @@ void getTituloSalas(int sockfd, struct sockaddr* addr, int addrlen) {
 /*
  * Funcao: getTituloGenero
  * -----------------------
- * Cliente envia um genero e servidor retorna todos os titulos deste certo genero
+ * Servidor recebe um genero e retorna todos os titulos deste certo genero
  *
  * sockfd: inteiro descritor do socket
+ * addr: ponteiro para a estrutura que contem o endereço IP e porta
+ * addrlen: inteiro referente ao tamanho da estrutura acima
  *
  */
 void getTituloGenero(int sockfd, struct sockaddr* addr, int addrlen) {
@@ -250,9 +308,11 @@ void getTituloGenero(int sockfd, struct sockaddr* addr, int addrlen) {
 /*
  * Funcao: getAll
  * --------------
- * Envia para o servidor o id de um filme recebe todas as suas informacoes
+ * Recebe do cliente um id e enviar todas as informacoes do filme
  *
  * sockfd: inteiro descritor do socket
+ * addr: ponteiro para a estrutura que contem o endereço IP e porta
+ * addrlen: inteiro referente ao tamanho da estrutura acima
  *
  */
 void getAll(int sockfd, struct sockaddr* addr, int addrlen) {
@@ -291,6 +351,8 @@ void getAll(int sockfd, struct sockaddr* addr, int addrlen) {
  * Servidor envia todas as informacoes de todos os filmes
  *
  * sockfd: inteiro descritor do socket
+ * addr: ponteiro para a estrutura que contem o endereço IP e porta
+ * addrlen: inteiro referente ao tamanho da estrutura acima
  *
  */
 void getCatalogo(int sockfd, struct sockaddr* addr, int addrlen) {
@@ -327,12 +389,14 @@ void getCatalogo(int sockfd, struct sockaddr* addr, int addrlen) {
 /*
  * Funcao: escolheOperacao
  * -----------------------
- * Atribui um numero para cada operacao disponivel. Obtem do console a operacao escolhida pelo cliente, envia o
- * codigo da operacao ao servidor e inicia o processamento chamando a funcao responsavel no lado cliente. Em seguida recebe do servidor
- * a variavel status que informa se existem filmes cadastrados no catálogo de filmes ou não, a fim de tratar o caso de lista vazia onde somente
- * a operacao de cadastro podera ser realizada.
+ * Cliente envia ao servidor a operacao que deseja realizar. Servidor chama funcao que conta o numero
+ * de linhas do catalogo de filmes, para tratar o caso de ainda não existirem filmes cadastrados. Se a lista de filmes
+ * ainda não existir ou estiver vazia, a variavel status = 0, caso contrário status = 1. Se ainda não houver filmes
+ * cadastrados, somente as operacoes 1 e 8 podem ser enviadas ao servidor.
  *
  * sockfd: inteiro descritor do socket
+ * addr: ponteiro para a estrutura que contem o endereço IP e porta
+ * addrlen: inteiro referente ao tamanho da estrutura acima
  *
  */
 void escolheOperacao(int sockfd, struct sockaddr* addr, int addrlen) {
@@ -378,6 +442,9 @@ void escolheOperacao(int sockfd, struct sockaddr* addr, int addrlen) {
 	}
 }
 
+/* Neste programa, main e responsavel por chamar as primitivas de sockets referentes
+   ao protocolo UDP e em seguida chamar a funcao escolheOperacao que define qual operacao
+   sera executada de acordo com o cliente */
 int main(int argc, char** argv) {
 	int sockfd;
 	struct sockaddr_in addr;
